@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseWA — Reportes</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --orange:#E8590C;--orange-light:#FFF3EC;--orange-mid:#F4A672;
+  --green:#2E7D32;--green-light:#E8F5E9;
+  --blue:#1565C0;--blue-light:#E3F2FD;
+  --black:#111110;--gray-50:#FAFAF9;--gray-100:#F4F3F0;
+  --gray-200:#E8E7E3;--gray-300:#D1D0CC;--gray-500:#888780;--gray-700:#444441;
+  --white:#FFFFFF;--sidebar-w:236px;--nav-h:52px;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--gray-50);color:var(--black);font-size:14px;line-height:1.5;overflow-x:hidden}
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--white);border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 1.5rem 0 0;z-index:200}
+.nav-brand{width:var(--sidebar-w);flex-shrink:0;display:flex;align-items:center;padding:0 1.25rem;border-right:1px solid var(--gray-200);height:100%}
+.nav-logo{font-size:16px;font-weight:600;letter-spacing:-.5px;color:var(--black)}
+.nav-logo span{color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.nav-crumb{font-size:12px;color:var(--gray-500);display:flex;align-items:center;gap:6px}
+.nav-crumb strong{color:var(--black);font-weight:500}
+.period-badge{font-size:11px;background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-mid);padding:3px 10px;border-radius:20px;font-weight:500}
+.export-btn{font-size:11px;padding:5px 12px;background:var(--black);color:var(--white);border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:500;transition:opacity .15s}
+.export-btn:hover{opacity:.8}
+.ai-chat-btn{display:flex;align-items:center;gap:7px;font-size:12px;padding:6px 14px;background:var(--white);color:var(--black);border:1px solid var(--gray-200);border-radius:20px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.ai-chat-btn:hover{border-color:var(--orange);color:var(--orange);box-shadow:0 1px 8px rgba(232,89,12,.15)}
+.ai-chat-icon{color:var(--orange);font-size:14px}
+.chat-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:200;backdrop-filter:blur(2px)}
+.chat-overlay.open{display:block}
+.chat-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:var(--white);border-left:1px solid var(--gray-200);z-index:201;display:flex;flex-direction:column;transition:right .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1)}
+.chat-panel.open{right:0}
+.chat-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--gray-200);flex-shrink:0}
+.chat-header-left{display:flex;align-items:center;gap:10px}
+.chat-header-icon{font-size:20px;color:var(--orange)}
+.chat-header-title{font-size:14px;font-weight:600;letter-spacing:-.2px}
+.chat-header-sub{font-size:11px;color:var(--gray-400);margin-top:1px}
+.chat-close{background:none;border:none;font-size:16px;cursor:pointer;color:var(--gray-400);padding:4px;line-height:1}
+.chat-close:hover{color:var(--black)}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-msg{display:flex;flex-direction:column;gap:6px}
+.chat-msg-user{align-items:flex-end}
+.chat-msg-ai{align-items:flex-start}
+.chat-bubble{max-width:88%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.5}
+.chat-msg-user .chat-bubble{background:var(--orange);color:var(--white);border-bottom-right-radius:3px}
+.chat-msg-ai .chat-bubble{background:var(--gray-100);color:var(--black);border-bottom-left-radius:3px}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chat-sug{font-size:11px;padding:5px 10px;background:var(--white);border:1px solid var(--gray-200);border-radius:12px;cursor:pointer;font-family:inherit;color:var(--gray-500);transition:all .1s}
+.chat-sug:hover{border-color:var(--orange);color:var(--orange)}
+.chat-typing{display:flex;align-items:center;gap:4px;padding:10px 13px;background:var(--gray-100);border-radius:12px;border-bottom-left-radius:3px;width:fit-content}
+.chat-typing span{width:6px;height:6px;background:var(--gray-400);border-radius:50%;animation:chatdot 1.2s infinite}
+.chat-typing span:nth-child(2){animation-delay:.2s}
+.chat-typing span:nth-child(3){animation-delay:.4s}
+@keyframes chatdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.chat-input-wrap{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--gray-200);flex-shrink:0}
+.chat-input{flex:1;padding:9px 13px;border:1px solid var(--gray-200);border-radius:20px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.chat-input:focus{border-color:var(--orange)}
+.chat-send{width:36px;height:36px;background:var(--orange);color:var(--white);border:none;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s}
+.chat-send:hover{opacity:.85}
+.sidebar{position:fixed;top:var(--nav-h);left:0;bottom:0;width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;z-index:150;overflow-y:auto}
+.sb-group{padding:1.1rem 1rem .3rem;font-size:10px;font-weight:600;color:var(--gray-300);text-transform:uppercase;letter-spacing:.9px}
+.sb-divider{height:1px;background:var(--gray-100);margin:5px 12px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;margin:1px 7px;border-radius:var(--radius-sm);cursor:pointer;color:var(--gray-500);font-size:12.5px;font-weight:400;border:none;background:none;width:calc(100% - 14px);text-align:left;font-family:inherit;transition:background .1s,color .1s}
+.nav-item:hover{background:var(--gray-100);color:var(--black)}
+.nav-item.active{background:var(--orange-light);color:var(--orange);font-weight:500}
+.nav-icon{font-size:13px;width:17px;text-align:center;flex-shrink:0}
+.nav-label{flex:1}
+.nav-soon{opacity:.45}
+.sb-footer{padding:.8rem 1rem;border-top:1px solid var(--gray-100);font-size:10px;color:var(--gray-300);text-align:center}
+.main-wrap{margin-left:var(--sidebar-w);margin-top:var(--nav-h)}
+.page{display:none;padding:1.5rem 2rem 3rem;max-width:1220px;animation:fadeUp .2s ease both}
+.page.active{display:block}
+.page-header{margin-bottom:1.5rem}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:3px}
+.page-desc{font-size:12px;color:var(--gray-500)}
+.page-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-top:6px}
+.tag-live{background:var(--green-light);color:var(--green)}
+.tag-soon{background:var(--orange-light);color:var(--orange)}
+.filter-bar{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:11px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.filter-label{font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.filter-divider{width:1px;height:16px;background:var(--gray-200);flex-shrink:0}
+.filter-bar select{font-size:12px;padding:5px 8px;border-radius:var(--radius-sm);border:1px solid var(--gray-200);background:var(--gray-50);color:var(--black);cursor:pointer;font-family:inherit}
+.filter-bar select:focus{outline:none;border-color:var(--orange)}
+.apply-btn{font-size:12px;padding:5px 14px;background:var(--orange);color:var(--white);border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:500;margin-left:auto}
+.reset-btn{font-size:12px;padding:5px 10px;background:none;color:var(--gray-500);border:1px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit}
+.reset-btn:hover{border-color:var(--gray-500);color:var(--black)}
+.sh{display:flex;align-items:center;gap:8px;margin:1.75rem 0 1rem}
+.sh-title{font-size:10px;font-weight:600;color:var(--gray-300);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.sh-line{flex:1;height:1px;background:var(--gray-200)}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1.5rem}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange);border-radius:var(--radius) var(--radius) 0 0}
+.kpi-card.g::before{background:var(--green)}
+.kpi-card.b::before{background:var(--blue)}
+.kpi-label{font-size:11px;color:var(--gray-500);margin-bottom:6px;font-weight:500}
+.kpi-value{font-size:24px;font-weight:600;color:var(--black);line-height:1;letter-spacing:-.5px}
+.kpi-delta{font-size:11px;margin-top:5px}
+.du{color:var(--green)}.dd{color:#C62828}.dn{color:var(--gray-500)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g3b{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.g2,.g3,.g3b{grid-template-columns:1fr}}
+.card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:600;color:var(--black);margin-bottom:3px}
+.card-sub{font-size:11px;color:var(--gray-500);margin-bottom:12px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-700)}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.funnel-wrap{display:flex;flex-direction:column;gap:6px}
+.funnel-row{display:flex;align-items:center;gap:9px}
+.funnel-label{font-size:11px;color:var(--gray-500);width:76px;text-align:right;flex-shrink:0;font-weight:500}
+.funnel-bar-bg{flex:1;background:var(--gray-100);border-radius:4px;height:28px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 10px}
+.funnel-bar span{font-size:11px;font-weight:600;color:#fff;white-space:nowrap}
+.funnel-pct{font-size:10px;color:var(--gray-500);width:38px;flex-shrink:0;text-align:right;font-family:'DM Mono',monospace}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:7px 11px;border-bottom:1px solid var(--gray-200);color:var(--gray-500);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;background:var(--gray-50)}
+tbody td{padding:9px 11px;border-bottom:1px solid var(--gray-100);color:var(--black);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--gray-50)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.b-org{background:#FFF3EC;color:#C04A08}.b-ctwa{background:#E8F5E9;color:#1B5E20}
+.b-camp{background:#E3F2FD;color:#1565C0}.b-hook{background:#F3E5F5;color:#6A1B9A}
+.b-tmpl{background:#FFF8E1;color:#E65100}
+.ok{color:var(--green);font-weight:600;font-family:'DM Mono',monospace}
+.fail{color:#C62828;font-weight:600;font-family:'DM Mono',monospace}
+.mono{font-family:'DM Mono',monospace;font-size:11px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--gray-200);margin-bottom:1rem}
+.tab-btn{font-size:12px;padding:7px 14px;border:none;background:none;cursor:pointer;color:var(--gray-500);font-family:inherit;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.tab-btn.active{color:var(--orange);border-bottom-color:var(--orange)}
+.tab-btn:hover:not(.active){color:var(--black)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.subtabs{display:flex;gap:2px;border-bottom:1px solid var(--gray-200);margin-bottom:1.5rem}
+.stab-btn{font-size:12px;padding:8px 16px;border:none;background:none;cursor:pointer;color:var(--gray-500);font-family:inherit;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;white-space:nowrap}
+.stab-btn.active{color:var(--orange);border-bottom-color:var(--orange)}
+.stab-btn:hover:not(.active){color:var(--black)}
+.stab-panel{display:none}.stab-panel.active{display:block}
+.coming-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:58vh;text-align:center;gap:13px}
+.cs-icon{font-size:46px;opacity:.1}
+.cs-title{font-size:16px;font-weight:600;color:var(--black);opacity:.3}
+.cs-desc{font-size:12.5px;color:var(--gray-500);max-width:310px;line-height:1.75}
+.cs-pills{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.cs-pill{font-size:10px;background:var(--gray-100);color:var(--gray-500);padding:3px 10px;border-radius:20px;font-weight:500}
+.cs-tag{display:inline-block;font-size:11px;background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-mid);padding:4px 14px;border-radius:20px;font-weight:500}
+.canal-header{display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;padding:16px 20px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:var(--shadow)}
+.canal-icon-wrap{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.canal-icon-meta{background:#E3F2FD}.canal-icon-google{background:var(--green-light)}.canal-icon-web{background:var(--orange-light)}
+.canal-header-text .canal-name{font-size:15px;font-weight:600;color:var(--black)}
+.canal-header-text .canal-sub{font-size:11px;color:var(--gray-500);margin-top:2px}
+.pauta-resumen-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;background:var(--white);box-shadow:var(--shadow)}
+.pauta-canal-col{border-right:1px solid var(--gray-200)}
+.pauta-canal-col:last-child{border-right:none}
+.pauta-col-header{padding:14px 18px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:10px}
+.pauta-col-accent{width:4px;height:32px;border-radius:2px;flex-shrink:0}
+.pauta-col-name{font-size:13px;font-weight:600;color:var(--black)}
+.pauta-col-sub{font-size:10px;color:var(--gray-500);margin-top:1px}
+.pauta-metrics{display:flex;flex-direction:column}
+.pauta-metric-row{padding:11px 18px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pauta-metric-row:last-child{border-bottom:none}
+.pm-label{font-size:11px;color:var(--gray-500);font-weight:500}
+.pm-value{font-size:13px;font-weight:600;color:var(--black);font-family:'DM Mono',monospace;text-align:right}
+.pm-value.best{color:var(--green)}.pm-value.worst{color:#C62828}
+.pm-delta{font-size:10px;margin-top:1px;text-align:right}
+.pm-delta.du{color:var(--green)}.pm-delta.dd{color:#C62828}
+.pauta-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:800px){.pauta-chart-grid{grid-template-columns:1fr}}
+.rank-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle}
+.rank-1{background:#E8F5E9;color:#1B5E20}.rank-2{background:#FFF8E1;color:#E65100}.rank-3{background:#FEECEC;color:#C62828}
+
+/* ── CONFIG ── */
+.cfg-layout{display:flex;flex-direction:column;gap:14px;max-width:700px}
+.cfg-section{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.cfg-head{padding:14px 18px;border-bottom:1px solid var(--gray-100);background:var(--gray-50);display:flex;align-items:center;gap:12px}
+.cfg-head-icon{font-size:16px;width:32px;height:32px;background:var(--white);border:1px solid var(--gray-200);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cfg-head-title{font-size:13px;font-weight:600;color:var(--black)}
+.cfg-head-desc{font-size:11px;color:var(--gray-500);margin-top:1px}
+.cfg-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.cfg-field-label{font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.cfg-num{width:80px;font-size:14px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 10px;background:var(--gray-50);color:var(--black)}
+.cfg-num:focus{outline:none;border-color:var(--orange)}
+.cfg-hint{font-size:11px;color:var(--gray-500)}
+.cfg-row{display:flex;align-items:center;gap:10px}
+.cfg-stage-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.cfg-stage-num{width:22px;height:22px;border-radius:50%;background:var(--orange-light);color:var(--orange);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cfg-text{flex:1;font-size:12px;font-family:inherit;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:6px 10px;background:var(--gray-50);color:var(--black)}
+.cfg-text:focus{outline:none;border-color:var(--orange)}
+.cfg-radios{display:flex;gap:14px;margin-bottom:10px}
+.cfg-radio{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.cfg-radio input{accent-color:var(--orange)}
+.cfg-checks{display:flex;flex-wrap:wrap;gap:6px}
+.cfg-check{display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;background:var(--gray-50);border:1px solid var(--gray-200);padding:4px 10px;border-radius:20px;transition:all .1s}
+.cfg-check.sel{background:var(--orange-light);border-color:var(--orange);color:var(--orange)}
+.cfg-check input{accent-color:var(--orange)}
+.conv-metric-list{display:flex;flex-direction:column;gap:8px}
+.conv-metric-row{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px 14px;display:flex;flex-direction:column;gap:10px;position:relative}
+.conv-metric-top{display:flex;align-items:center;gap:8px}
+.conv-metric-name{flex:1;font-size:12px;font-family:inherit;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:5px 9px;background:var(--white);color:var(--black)}
+.conv-metric-name:focus{outline:none;border-color:var(--orange)}
+.conv-metric-type{font-size:12px;font-family:inherit;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:5px 9px;background:var(--white);color:var(--black);cursor:pointer}
+.conv-metric-type:focus{outline:none;border-color:var(--orange)}
+.conv-metric-del{width:28px;height:28px;background:none;border:1px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;color:var(--gray-500);font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .1s}
+.conv-metric-del:hover{border-color:#e53935;color:#e53935;background:#fff5f5}
+.conv-metric-values{display:flex;flex-wrap:wrap;gap:5px}
+.conv-metric-hint{font-size:11px;color:var(--gray-500);font-style:italic}
+.conv-add-btn{display:flex;align-items:center;gap:6px;font-size:12px;padding:7px 14px;background:var(--white);border:1px dashed var(--gray-300);border-radius:var(--radius-sm);cursor:pointer;color:var(--gray-500);font-family:inherit;transition:all .1s;width:100%;justify-content:center}
+.conv-add-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-light)}
+.conv-primary-badge{font-size:9px;font-weight:700;background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-mid);padding:2px 6px;border-radius:10px;white-space:nowrap}
+.cfg-footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:16px;border-top:1px solid var(--gray-100)}
+.cfg-footer-note{font-size:11px;color:var(--gray-500)}
+.cfg-apply{font-size:12px;font-weight:600;padding:9px 20px;background:var(--orange);color:var(--white);border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;transition:opacity .15s}
+.cfg-apply:hover{opacity:.85}
+.cfg-toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:var(--white);font-size:12px;font-weight:500;padding:10px 18px;border-radius:var(--radius-sm);box-shadow:var(--shadow-md);opacity:0;transition:opacity .25s;pointer-events:none;z-index:999}
+.cfg-toast.show{opacity:1}
+
+/* ── TABLES PAGE ── */
+.tbl-list{display:flex;flex-direction:column;gap:8px}
+.tbl-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.tbl-hdr{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .1s}
+.tbl-hdr:hover{background:var(--gray-50)}
+.tbl-ico{width:30px;height:30px;border-radius:6px;background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.tbl-name{font-size:12px;font-weight:600;color:var(--black);font-family:'DM Mono',monospace}
+.tbl-desc{font-size:10px;color:var(--gray-500);margin-top:1px}
+.tbl-meta{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tbl-rows{font-size:10px;color:var(--gray-500);font-family:'DM Mono',monospace;background:var(--gray-100);padding:2px 7px;border-radius:10px}
+.tbl-chev{font-size:11px;color:var(--gray-300);transition:transform .15s}
+.tbl-card.open .tbl-chev{transform:rotate(90deg)}
+.tbl-body{display:none;border-top:1px solid var(--gray-100)}
+.tbl-card.open .tbl-body{display:block}
+.tbl-inner-tabs{display:flex;background:var(--gray-50);border-bottom:1px solid var(--gray-100)}
+.tbl-itab{font-size:11px;padding:7px 14px;border:none;background:none;cursor:pointer;font-family:inherit;font-weight:500;color:var(--gray-500);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tbl-itab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.schema-wrap{padding:10px 16px}
+.schema-header{display:grid;grid-template-columns:160px 80px 1fr;gap:10px;padding:0 8px 7px;font-size:9px;font-weight:600;color:var(--gray-300);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--gray-100);margin-bottom:4px}
+.schema-row{display:grid;grid-template-columns:160px 80px 1fr;gap:10px;padding:6px 8px;border-radius:4px;font-size:11px;align-items:start}
+.schema-row:nth-child(even){background:var(--gray-50)}
+.f-name{font-family:'DM Mono',monospace;font-weight:500;color:var(--black);font-size:11px}
+.f-type{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--blue-light);color:var(--blue);font-family:'DM Mono',monospace;white-space:nowrap;align-self:start;display:inline-block}
+.f-desc{color:var(--gray-700);line-height:1.4}
+.preview-wrap{padding:10px 16px;overflow-x:auto;max-height:320px;overflow-y:auto}
+.preview-wrap table{font-size:11px}
+.preview-wrap thead th{font-size:9px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PERIOD PRESETS ── */
+.preset-group{display:flex;gap:3px}
+.preset-btn{font-size:11px;padding:4px 10px;border:1px solid var(--gray-200);background:var(--gray-50);color:var(--gray-500);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:500;transition:all .1s}
+.preset-btn.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.preset-btn:hover:not(.active){background:var(--gray-100);color:var(--black)}
+
+/* ── REPORT HEADER ── */
+.report-meta{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
+.report-meta-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.report-updated{font-size:10px;color:var(--gray-300);display:flex;align-items:center;gap:4px}
+.report-updated span{color:var(--gray-500);font-weight:500}
+
+/* ── KPI TOOLTIP ── */
+.kpi-tip{position:relative;display:inline}
+.kpi-tip-icon{font-size:9px;color:var(--gray-300);cursor:help;margin-left:3px;user-select:none}
+.kpi-tip-box{display:none;position:absolute;bottom:calc(100%+8px);left:50%;transform:translateX(-50%);background:var(--black);color:#fff;font-size:11px;line-height:1.5;padding:8px 11px;border-radius:7px;width:210px;z-index:300;white-space:normal;box-shadow:var(--shadow-md);pointer-events:none}
+.kpi-tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--black)}
+.kpi-tip:hover .kpi-tip-box{display:block}
+
+/* ── SPLIT LAYOUT ── */
+.g-split,.grid-6040{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.g-split,.grid-6040{grid-template-columns:1fr}}
+
+/* ── FUNNEL CÓNICO ── */
+.funnel-v{display:flex;flex-direction:column;gap:3px;align-items:center;padding:4px 0}
+.funnel-step{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+.funnel-step-bar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-radius:3px;transition:opacity .15s;cursor:default;min-width:60px}
+.funnel-step-bar:hover{opacity:.85}
+.funnel-step-label{font-size:10px;color:var(--gray-500);font-weight:500;white-space:nowrap}
+.funnel-step-val{font-size:12px;font-weight:700;color:#fff}
+.funnel-step-pct{font-size:10px;color:rgba(255,255,255,.75);font-family:'DM Mono',monospace}
+.funnel-connector{width:2px;height:4px;background:var(--gray-200)}
+/* ── FUNNEL HTML ── */
+.fh-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.fh-label{font-size:11px;font-weight:500;color:var(--gray-500);width:68px;text-align:right;flex-shrink:0;white-space:nowrap}
+.fh-bar-outer{flex:1;display:flex;align-items:center;gap:8px}
+.fh-bar{height:30px;border-radius:3px;display:flex;align-items:center;gap:5px;padding:0 10px;min-width:50px;transition:width .3s ease}
+.fh-bar-val{font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.fh-bar-pct{font-size:10px;color:rgba(255,255,255,.7);white-space:nowrap}
+.fh-drop{font-size:10px;color:var(--gray-300);white-space:nowrap;font-family:'DM Mono',monospace}
+
+/* ── PAGE HEADER ROW ── */
+.ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.ph-left{flex-shrink:0}
+.ph-right{max-width:480px;text-align:right;padding-top:3px}
+.page-updated{font-size:10px;color:var(--gray-300);margin-top:4px}
+.page-updated span{color:var(--gray-500);font-weight:500}
+
+/* ── AI SEARCH BAR ── */
+.ai-search-wrap{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.ai-search-inner{display:flex;align-items:center;flex:1;background:var(--white);border:1.5px solid var(--gray-200);border-radius:24px;padding:7px 7px 7px 20px;box-shadow:var(--shadow-md);transition:border-color .15s}
+.ai-search-inner:focus-within{border-color:var(--orange);box-shadow:0 2px 12px rgba(232,89,12,.12)}
+.ai-search-input{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;background:transparent;color:var(--black)}
+.ai-search-input::placeholder{color:var(--gray-300)}
+.ai-search-submit{width:34px;height:34px;background:var(--orange);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s}
+.ai-search-submit:hover{opacity:.85}
+.ai-search-doc-btn{font-size:12px;padding:8px 16px;background:var(--black);color:var(--white);border:none;border-radius:20px;cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap;flex-shrink:0;transition:opacity .15s;letter-spacing:-.1px}
+.ai-search-doc-btn:hover{opacity:.8}
+
+/* ── DOC PANEL ── */
+.doc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:200;backdrop-filter:blur(2px)}
+.doc-overlay.open{display:block}
+.doc-panel{position:fixed;top:0;right:-480px;width:460px;height:100vh;background:var(--white);border-left:1px solid var(--gray-200);z-index:201;display:flex;flex-direction:column;transition:right .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1)}
+.doc-panel.open{right:0}
+.doc-ph{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--gray-200);flex-shrink:0}
+.doc-ph-title{font-size:14px;font-weight:600;letter-spacing:-.2px}
+.doc-ph-sub{font-size:11px;color:var(--gray-500);margin-top:2px}
+.doc-close{background:none;border:none;font-size:16px;cursor:pointer;color:var(--gray-400);padding:4px;line-height:1}
+.doc-close:hover{color:var(--black)}
+.doc-body{flex:1;overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:18px}
+.doc-sec{display:flex;flex-direction:column;gap:8px}
+.doc-sec-title{font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--gray-100);padding-bottom:6px}
+.doc-sec-body{font-size:12.5px;color:var(--black);line-height:1.65}
+.doc-item{padding:8px 0;border-bottom:1px solid var(--gray-100)}
+.doc-item:last-child{border-bottom:none}
+.doc-item-name{font-size:12px;font-weight:600;color:var(--black);margin-bottom:2px}
+.doc-item-desc{font-size:12px;color:var(--gray-500);line-height:1.55}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand"><div class="nav-logo">pulse<span>WA</span></div></div>
+  <div class="nav-right">
+    <div class="nav-crumb"><span id="nav-group-name" style="color:var(--gray-300)">General</span><span style="color:var(--gray-200)">›</span><strong id="nav-page-name">Conversaciones</strong></div>
+    <div class="period-badge" id="period-badge">Mayo 2024 vs Abril 2024</div>
+    <button class="ai-chat-btn" onclick="toggleChat()"><span class="ai-chat-icon">✦</span> Preguntá lo que quieras</button>
+    <button class="export-btn" onclick="window.print()">↓ Exportar</button>
+  </div>
+</nav>
+
+<aside class="sidebar">
+  <div class="sb-group">General</div>
+  <button class="nav-item active" onclick="goTo('general',this,'General','Conversaciones')">
+    <span class="nav-icon">📊</span><span class="nav-label">Conversaciones</span>
+  </button>
+  <button class="nav-item" onclick="goTo('contactos',this,'General','Contactos')">
+    <span class="nav-icon">👤</span><span class="nav-label">Contactos</span>
+  </button>
+  <div class="sb-divider"></div>
+  <div class="sb-group">Automatizaciones</div>
+  <button class="nav-item nav-soon" onclick="goTo('flujos',this,'Automatizaciones','Flujos')">
+    <span class="nav-icon">🔀</span><span class="nav-label">Flujos</span>
+  </button>
+  <button class="nav-item nav-soon" onclick="goTo('smarton',this,'Automatizaciones','Smarton de voz')">
+    <span class="nav-icon">🔊</span><span class="nav-label">Smarton de voz</span>
+  </button>
+  <div class="sb-divider"></div>
+  <div class="sb-group">Asesores</div>
+  <button class="nav-item nav-soon" onclick="goTo('rendimiento',this,'Asesores','Rendimiento de agentes')">
+    <span class="nav-icon">👥</span><span class="nav-label">Rendimiento de agentes</span>
+  </button>
+  <button class="nav-item nav-soon" onclick="goTo('llamadas',this,'Asesores','Llamadas de agentes')">
+    <span class="nav-icon">📞</span><span class="nav-label">Llamadas de agentes</span>
+  </button>
+  <button class="nav-item nav-soon" onclick="goTo('estatus',this,'Asesores','Estatus de agentes')">
+    <span class="nav-icon">🟢</span><span class="nav-label">Estatus de agentes</span>
+  </button>
+  <div class="sb-divider"></div>
+  <div class="sb-group">Campañas outbound</div>
+  <button class="nav-item nav-soon" onclick="goTo('campanas',this,'Campañas outbound','Rendimiento de campañas')">
+    <span class="nav-icon">📣</span><span class="nav-label">Rendimiento de campañas</span>
+  </button>
+  <div class="sb-divider"></div>
+  <div class="sb-group">Pauta inbound</div>
+  <button class="nav-item" onclick="goToPautaTab('stab-meta',this,'Pauta inbound','Click to WA · Meta')">
+    <span class="nav-icon">📘</span><span class="nav-label">Click to WA · Meta</span>
+  </button>
+  <button class="nav-item nav-soon" onclick="goToPautaTab('stab-google',this,'Pauta inbound','Click to WA · Google')">
+    <span class="nav-icon">🟢</span><span class="nav-label">Click to WA · Google</span>
+  </button>
+  <button class="nav-item nav-soon" onclick="goToPautaTab('stab-web',this,'Pauta inbound','Tráfico web')">
+    <span class="nav-icon">🌐</span><span class="nav-label">Tráfico web</span>
+  </button>
+  <div class="sb-divider"></div>
+  <div class="sb-group">Negocio</div>
+  <button class="nav-item nav-soon" onclick="goTo('facturacion',this,'Negocio','Facturación')">
+    <span class="nav-icon">💳</span><span class="nav-label">Facturación</span>
+  </button>
+  <div style="margin-top:auto">
+    <div class="sb-divider"></div>
+    <button class="nav-item" onclick="goTo('config',this,'Sistema','Configuración')" style="opacity:.7">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Configuración</span>
+    </button>
+    <button class="nav-item" onclick="goTo('tables',this,'Sistema','Ver tablas')" style="opacity:.7">
+      <span class="nav-icon">🗄️</span><span class="nav-label">Ver tablas</span>
+    </button>
+    <div class="sb-footer">pulseWA v1.0 · mayo 2024</div>
+  </div>
+</aside>
+
+<!-- DOC PANEL — Conversaciones -->
+<div class="doc-overlay" id="doc-overlay" onclick="toggleDoc()"></div>
+<div class="doc-panel" id="doc-panel">
+  <div class="doc-ph">
+    <div><div class="doc-ph-title">📖 Documentación del reporte</div><div class="doc-ph-sub">Conversaciones · referencia rápida</div></div>
+    <button class="doc-close" onclick="toggleDoc()">✕</button>
+  </div>
+  <div class="doc-body">
+    <div class="doc-sec">
+      <div class="doc-sec-title">Descripción del reporte</div>
+      <div class="doc-sec-body">Este reporte se basa en <strong>conversaciones únicas</strong>. Cada conversación representa un hilo de mensajes entre un contacto y la empresa: comienza con el primer mensaje entrante (o saliente en campañas) y termina cuando un agente aplica una <strong>tipificación de cierre</strong> (venta, sin respuesta, reagendar, no califica, etc.). Una misma persona puede generar múltiples conversaciones en distintas fechas.</div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">KPIs principales</div>
+      <div class="doc-item"><div class="doc-item-name">Conversaciones</div><div class="doc-item-desc">Total de conversaciones iniciadas en el período. Incluye todos los orígenes y canales, sin importar el resultado.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Escaladas a agente</div><div class="doc-item-desc">Conversaciones que pasaron del flujo automatizado a un agente humano. Puede ser por derivación automática del bot o solicitud del contacto.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Ventas cerradas</div><div class="doc-item-desc">Conversaciones con resultado de conversión según la métrica configurada en ⚙ Configuración (por tipificación o por etapa del funnel).</div></div>
+      <div class="doc-item"><div class="doc-item-name">Tasa de conversión</div><div class="doc-item-desc">Ventas / Total conversaciones × 100. Indica qué porcentaje del volumen terminó en venta.</div></div>
+      <div class="doc-item"><div class="doc-item-name">SLA primera respuesta</div><div class="doc-item-desc">% de conversaciones escaladas donde el agente respondió dentro del tiempo objetivo (configurable en ⚙). Solo aplica a conversaciones con agente asignado.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Tiempo promedio de respuesta</div><div class="doc-item-desc">Minutos promedio entre el primer mensaje del contacto y la primera respuesta del agente. Solo conversaciones escaladas.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Gráficos</div>
+      <div class="doc-item"><div class="doc-item-name">Conversaciones por día</div><div class="doc-item-desc">Tendencia diaria: barras naranjas = período actual, línea gris = período anterior, línea verde = ventas por día.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Funnel de conversión</div><div class="doc-item-desc">Cuántas conversaciones alcanzan cada etapa del proceso. El % indica la tasa de avance respecto a la etapa anterior (drop-off).</div></div>
+      <div class="doc-item"><div class="doc-item-name">Origen de tráfico</div><div class="doc-item-desc">Distribución por canal de entrada: orgánico, click to WA, campañas masivas, webhook o plantilla individual.</div></div>
+      <div class="doc-item"><div class="doc-item-name">SLA primera respuesta</div><div class="doc-item-desc">Distribución de conversaciones según si cumplieron el SLA. Porción verde = dentro del objetivo.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Tipificaciones de agente</div><div class="doc-item-desc">Distribución de los cierres aplicados: venta, sin respuesta, reagendar, no califica, pendiente docs.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Tabla de performance</div>
+      <div class="doc-item"><div class="doc-item-name">Por origen</div><div class="doc-item-desc">Agrupación por canal de entrada. Muestra conversaciones, escaladas y ventas por fuente.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Por flujo</div><div class="doc-item-desc">Agrupación por bot/flujo automatizado. Compara eficiencia entre Flujo Ventas, Soporte y Cobranza.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Por grupo de agentes</div><div class="doc-item-desc">Agrupación por equipo. Muestra SLA, tiempo promedio de respuesta, ventas y conversión por grupo.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Filtros</div>
+      <div class="doc-item"><div class="doc-item-name">Período (7d / 30d / 90d)</div><div class="doc-item-desc">Rango de análisis. Se genera automáticamente un período anterior equivalente para comparación en todos los KPIs.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Origen</div><div class="doc-item-desc">Filtra por canal de entrada: inbound orgánico, click to WA, campañas, webhooks o plantillas individuales.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Flujo</div><div class="doc-item-desc">Filtra por el bot que recibió la conversación (Flujo Ventas, Soporte, Cobranza).</div></div>
+      <div class="doc-item"><div class="doc-item-name">Grupo de agentes</div><div class="doc-item-desc">Filtra por equipo. Solo aplica a conversaciones escaladas y asignadas a un agente.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Tipificación</div><div class="doc-item-desc">Filtra por el resultado final marcado por el agente al cerrar la conversación.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Etapa</div><div class="doc-item-desc">Filtra por la última etapa alcanzada en el funnel. Permite analizar conversaciones que llegaron hasta cierto punto del proceso.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI CHAT PANEL -->
+<div class="chat-overlay" id="chat-overlay" onclick="toggleChat()"></div>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-header">
+    <div class="chat-header-left"><span class="chat-header-icon">✦</span><div><div class="chat-header-title">Asistente de datos</div><div class="chat-header-sub">Preguntá sobre el reporte activo</div></div></div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-msg chat-msg-ai">
+      <div class="chat-bubble">¡Hola! Soy tu asistente de datos 👋 Podés preguntarme sobre conversaciones, ventas, campañas, agentes o cualquier métrica del reporte que estás viendo.</div>
+      <div class="chat-suggestions">
+        <button class="chat-sug" onclick="askSuggestion(this)">¿Cuántas ventas hubo este mes?</button>
+        <button class="chat-sug" onclick="askSuggestion(this)">¿Qué campaña convierte mejor?</button>
+        <button class="chat-sug" onclick="askSuggestion(this)">¿Cuál es la tasa de asignación?</button>
+        <button class="chat-sug" onclick="askSuggestion(this)">¿Qué flujo genera más leads?</button>
+      </div>
+    </div>
+  </div>
+  <div class="chat-input-wrap">
+    <input class="chat-input" id="chat-input" type="text" placeholder="Escribí tu pregunta..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">↑</button>
+  </div>
+</div>
+
+<!-- DOC PANEL — Contactos -->
+<div class="doc-overlay" id="doc-contactos-overlay" onclick="toggleDocPanel('doc-contactos')"></div>
+<div class="doc-panel" id="doc-contactos-panel">
+  <div class="doc-ph">
+    <div><div class="doc-ph-title">📖 Documentación del reporte</div><div class="doc-ph-sub">Contactos · referencia rápida</div></div>
+    <button class="doc-close" onclick="toggleDocPanel('doc-contactos')">✕</button>
+  </div>
+  <div class="doc-body">
+    <div class="doc-sec">
+      <div class="doc-sec-title">Descripción del reporte</div>
+      <div class="doc-sec-body">Este reporte se basa en <strong>contactos únicos</strong>, definidos por número de teléfono de WhatsApp. Un contacto existe desde su primera interacción con la empresa. Puede tener múltiples conversaciones en distintas fechas — el reporte mide al contacto en sí, no sus conversaciones. Un contacto <em>nuevo</em> es aquel cuya primera conversación ocurrió dentro del período seleccionado.</div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">KPIs principales</div>
+      <div class="doc-item"><div class="doc-item-name">Total contactos</div><div class="doc-item-desc">Contactos únicos con al menos una conversación en el período. Es la base del reporte.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Contactos nuevos</div><div class="doc-item-desc">Contactos cuya primera conversación con la empresa ocurrió dentro del período seleccionado.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Contactos recurrentes</div><div class="doc-item-desc">Contactos que ya habían interactuado en períodos anteriores y volvieron a generar una conversación.</div></div>
+      <div class="doc-item"><div class="doc-item-name">% Calificados</div><div class="doc-item-desc">Porcentaje de contactos que alcanzaron la etapa definida como "Calificado" en ⚙ Configuración. Indica qué porción del volumen tiene intención de compra.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Completitud de campos</div><div class="doc-item-desc">% de contactos con al menos un campo custom cargado. Cuanto mayor, mejor es la calidad de la base para remarketing y segmentación.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Gráficos</div>
+      <div class="doc-item"><div class="doc-item-name">Contactos por día</div><div class="doc-item-desc">Tendencia diaria de nuevos (naranja) vs recurrentes (gris) en el período. Permite detectar picos de captación o de reactivación.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Campos completados</div><div class="doc-item-desc">% de contactos con cada campo custom cargado (marca, modelo, tipo de financiamiento, patente, presupuesto, año). Muestra qué campos tienen mayor cobertura en la base.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Tabla de campos</div>
+      <div class="doc-item"><div class="doc-item-name">Por campo</div><div class="doc-item-desc">Lista todos los campos custom disponibles con su tasa de completitud (% de contactos que lo tienen cargado) y su relación con la etapa "Calificado".</div></div>
+      <div class="doc-item"><div class="doc-item-name">Por valor (tab)</div><div class="doc-item-desc">Distribución de los valores dentro de cada campo. Ej: para "marca_auto" muestra Toyota 35%, Ford 22%, etc., con % de calificados por valor.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Filtros</div>
+      <div class="doc-item"><div class="doc-item-name">Período (7d / 30d / 90d)</div><div class="doc-item-desc">Rango de análisis. Un contacto aparece si tuvo al menos una conversación dentro del período.</div></div>
+      <div class="doc-item"><div class="doc-item-name">País</div><div class="doc-item-desc">Filtra por el código de país del número de teléfono del contacto (MX, AR, CO, CL, PE, UY).</div></div>
+      <div class="doc-item"><div class="doc-item-name">Etapa</div><div class="doc-item-desc">Filtra por la última etapa del funnel alcanzada por el contacto en sus conversaciones del período.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DOC PANEL — Click to WA · Meta -->
+<div class="doc-overlay" id="doc-meta-overlay" onclick="toggleDocPanel('doc-meta')"></div>
+<div class="doc-panel" id="doc-meta-panel">
+  <div class="doc-ph">
+    <div><div class="doc-ph-title">📖 Documentación del reporte</div><div class="doc-ph-sub">Click to WA · Meta · referencia rápida</div></div>
+    <button class="doc-close" onclick="toggleDocPanel('doc-meta')">✕</button>
+  </div>
+  <div class="doc-body">
+    <div class="doc-sec">
+      <div class="doc-sec-title">Descripción del reporte</div>
+      <div class="doc-sec-body">Este reporte analiza <strong>conversaciones iniciadas desde anuncios de Meta</strong> (Facebook e Instagram) con botón Click to WhatsApp. La unidad es la conversación, trazada desde el clic en el anuncio hasta el resultado final en el CRM. Permite medir ROI de pauta por cuenta, campaña, audiencia y anuncio individual.</div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">KPIs principales</div>
+      <div class="doc-item"><div class="doc-item-name">Cuentas vinculadas</div><div class="doc-item-desc">Cantidad de cuentas de Meta Ads conectadas y con actividad en el período.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Monto invertido</div><div class="doc-item-desc">Gasto publicitario total en Meta Ads en el período seleccionado, en USD.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Campañas activas</div><div class="doc-item-desc">Número de campañas de Meta que generaron al menos una conversación en el período.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Conversaciones iniciadas</div><div class="doc-item-desc">Total de conversaciones de WhatsApp originadas desde un anuncio de Meta en el período.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Asignadas (%)</div><div class="doc-item-desc">Conversaciones que fueron escaladas y asignadas a un agente. El % es sobre el total iniciado.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Ventas (%)</div><div class="doc-item-desc">Conversaciones con resultado de venta según la métrica configurada. El % es sobre el total iniciado.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Costo por conversación</div><div class="doc-item-desc">Monto invertido / Conversaciones iniciadas. Indica cuánto costó generar cada conversación.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Costo por venta</div><div class="doc-item-desc">Monto invertido / Ventas cerradas. Indica cuánto costó la pauta por cada conversión lograda.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Gráficos</div>
+      <div class="doc-item"><div class="doc-item-name">Conversaciones e importe por día</div><div class="doc-item-desc">Doble eje: barras naranjas = conversaciones diarias, línea azul = gasto diario en USD. Permite ver la relación entre inversión y volumen generado.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Embudo de etapas y ventas</div><div class="doc-item-desc">Funnel desde el contacto inicial hasta la venta. El % indica el avance respecto a la etapa anterior. Muestra dónde ocurre el mayor drop-off.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Tabla de performance</div>
+      <div class="doc-item"><div class="doc-item-name">Por campaña</div><div class="doc-item-desc">Performance agrupado por campaña de Meta. Muestra importe, conversaciones, costo/conv., asignadas y ventas.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Por audiencia</div><div class="doc-item-desc">Performance por conjunto de anuncios (audiencia/segmentación). Identifica qué segmentos generan mejor ROI.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Por anuncio</div><div class="doc-item-desc">Performance por creative individual. Permite comparar qué formatos y mensajes convierten mejor.</div></div>
+    </div>
+    <div class="doc-sec">
+      <div class="doc-sec-title">Filtros</div>
+      <div class="doc-item"><div class="doc-item-name">Período (7d / 30d / 90d)</div><div class="doc-item-desc">Rango de análisis. Aplica tanto al gasto como a las conversaciones iniciadas.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Cuenta de Meta</div><div class="doc-item-desc">Filtra por cuenta de Meta Ads conectada. Útil cuando hay múltiples cuentas de distintas marcas o mercados.</div></div>
+      <div class="doc-item"><div class="doc-item-name">Campaña</div><div class="doc-item-desc">Filtra para ver únicamente los anuncios y audiencias pertenecientes a una campaña específica.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+<!-- GENERAL -->
+<div class="page active" id="page-general">
+  <div class="page-header">
+    <div class="ph-row">
+      <div class="ph-left">
+        <div class="page-title">Conversaciones</div>
+        <div class="page-updated">Última actualización de datos: <span>hoy 9:30 AM</span></div>
+      </div>
+      <div class="ph-right page-desc">Seguimiento de todas las conversaciones de WhatsApp: volumen, origen, asignación a agentes, tipificaciones de cierre y cumplimiento de SLA · comparación automática con el período anterior equivalente</div>
+    </div>
+  </div>
+  <div class="ai-search-wrap">
+    <div class="ai-search-inner">
+      <input class="ai-search-input" id="ai-search-input" type="text" placeholder="Pregunta lo que quieras sobre conversaciones..." onkeydown="if(event.key==='Enter')sendFromSearch()">
+      <button class="ai-search-submit" onclick="sendFromSearch()">↑</button>
+    </div>
+    <button class="ai-search-doc-btn" onclick="toggleDoc()">📖 Ver documentación del reporte</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Período</span><div class="filter-divider"></div>
+    <div class="preset-group">
+      <button class="preset-btn" onclick="setPeriod(7,this)">7d</button>
+      <button class="preset-btn active" onclick="setPeriod(30,this)">30d</button>
+      <button class="preset-btn" onclick="setPeriod(90,this)">90d</button>
+    </div>
+    <div class="filter-divider"></div>
+    <span class="filter-label">Filtros</span><div class="filter-divider"></div>
+    <select id="f-origen"><option value="">Todos los orígenes</option><option>inbound organico</option><option>click to wa</option><option>campañas</option><option>webhooks</option><option>plantillas individuales</option></select>
+    <select id="f-bot"><option value="">Todos los flujos</option><option>Flujo Ventas</option><option>Flujo Soporte</option><option>Flujo Cobranza</option></select>
+    <select id="f-grupo"><option value="">Todos los grupos</option><option>Equipo Ventas</option><option>Equipo Soporte</option><option>Equipo Cobranza</option></select>
+    <select id="f-tipif"><option value="">Todas las tipificaciones</option><option>venta</option><option>soporte</option><option>sin respuesta</option><option>reagendar</option><option>no interesado</option></select>
+    <select id="f-etapa"><option value="">Todas las etapas</option><option>stage_1</option><option>stage_2</option><option>stage_3</option><option>stage_4</option></select>
+    <button class="reset-btn" onclick="resetFilters()">Limpiar</button>
+    <button class="apply-btn" onclick="applyFilters()">Aplicar</button>
+  </div>
+  <div class="sh"><span class="sh-title">KPIs principales</span><div class="sh-line"></div></div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="sh"><span class="sh-title">Conversaciones y ventas por día</span><div class="sh-line"></div></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="legend">
+      <div class="leg-item"><span class="leg-dot" style="background:#E8590C"></span>Conversaciones iniciadas</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#2E7D32;border-radius:50%"></span>Ventas</div>
+    </div>
+    <div style="position:relative;width:100%;height:240px"><canvas id="chart-daily"></canvas></div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">Funnel de conversión</div>
+      <div class="card-sub">De awareness a venta · tasa de caída por etapa</div>
+      <div id="funnel-html" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tipificaciones de agente</div>
+      <div class="card-sub">Distribución de cierres · mayor a menor</div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-tipif"></canvas></div>
+    </div>
+  </div>
+  <div class="sh" style="margin-top:1.5rem"><span class="sh-title">Performance detallado</span><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('tab-origen',this)">Por origen</button>
+      <button class="tab-btn" onclick="showTab('tab-bot',this)">Por flujo</button>
+      <button class="tab-btn" onclick="showTab('tab-grupo',this)">Por grupo de agentes</button>
+    </div>
+    <div class="tab-panel active" id="tab-origen"><div class="table-wrap"><table><thead><tr><th>Origen</th><th>Convs.</th><th>% Total</th><th>Dirección</th><th>Escaladas</th><th>% Escal.</th><th>% SLA</th><th>Ventas</th><th>% Conv.</th></tr></thead><tbody id="tbody-origen"></tbody></table></div></div>
+    <div class="tab-panel" id="tab-bot"><div class="table-wrap"><table><thead><tr><th>Flujo</th><th>Convs.</th><th>% Total</th><th>Etapa máx. prom.</th><th>Tipif. top</th><th>Escaladas</th><th>% Escal.</th><th>Ventas</th><th>% Conv.</th></tr></thead><tbody id="tbody-bot"></tbody></table></div></div>
+    <div class="tab-panel" id="tab-grupo"><div class="table-wrap"><table><thead><tr><th>Grupo</th><th>Asignadas</th><th>% Total</th><th>SLA OK</th><th>% SLA</th><th>Resp. prom.</th><th>Ventas</th><th>% Conv.</th><th>Tipif. top</th></tr></thead><tbody id="tbody-grupo"></tbody></table></div></div>
+  </div>
+</div>
+
+<!-- CONTACTOS -->
+<div class="page" id="page-contactos">
+  <div class="page-header">
+    <div class="ph-row">
+      <div class="ph-left">
+        <div class="page-title">Contactos</div>
+        <div class="page-updated">Última actualización de datos: <span>hoy 9:30 AM</span></div>
+      </div>
+      <div class="ph-right page-desc">Universo de contactos únicos por número de WhatsApp: nuevos vs recurrentes, completitud de campos y segmentación por etapa · base de remarketing y calificación</div>
+    </div>
+  </div>
+  <div class="ai-search-wrap">
+    <div class="ai-search-inner">
+      <input class="ai-search-input" id="ai-search-contactos" type="text" placeholder="Pregunta lo que quieras sobre contactos..." onkeydown="if(event.key==='Enter')sendFromSearch('ai-search-contactos')">
+      <button class="ai-search-submit" onclick="sendFromSearch('ai-search-contactos')">↑</button>
+    </div>
+    <button class="ai-search-doc-btn" onclick="toggleDocPanel('doc-contactos')">📖 Ver documentación del reporte</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Período</span><div class="filter-divider"></div>
+    <div class="preset-group">
+      <button class="preset-btn" onclick="setContactPeriod(7,this)">7d</button>
+      <button class="preset-btn active" onclick="setContactPeriod(30,this)">30d</button>
+      <button class="preset-btn" onclick="setContactPeriod(90,this)">90d</button>
+    </div>
+    <div class="filter-divider"></div>
+    <span class="filter-label">Filtros</span><div class="filter-divider"></div>
+    <select id="cf-pais"><option value="">Todos los países</option><option>MX</option><option>AR</option><option>CO</option><option>CL</option><option>PE</option><option>UY</option></select>
+    <select id="cf-stage"><option value="">Todas las etapas</option><option>stage_1</option><option>stage_2</option><option>stage_3</option><option>stage_4</option></select>
+    <button class="reset-btn" onclick="resetContactFilters()">Limpiar</button>
+    <button class="apply-btn" onclick="applyContactFilters()">Aplicar</button>
+  </div>
+  <div class="sh"><span class="sh-title">KPIs principales</span><div class="sh-line"></div></div>
+  <div class="kpi-grid" id="ckpi-grid"></div>
+  <div class="sh"><span class="sh-title">Tendencia & distribución por etapa</span><div class="sh-line"></div></div>
+  <div class="g-split">
+    <div class="card">
+      <div class="card-title">Contactos por día</div>
+      <div class="card-sub">Nuevos (naranja) vs recurrentes (gris) en el período</div>
+      <div class="legend">
+        <div class="leg-item"><span class="leg-dot" style="background:#E8590C"></span>Nuevos</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#D1D0CC"></span>Recurrentes</div>
+      </div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-c-daily"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Campos completados</div>
+      <div class="card-sub">% de contactos con cada campo de información cargado</div>
+      <div style="position:relative;width:100%;height:220px"><canvas id="chart-c-fields"></canvas></div>
+    </div>
+  </div>
+  <div class="sh"><span class="sh-title">Análisis por campo de información · Remarketing</span><div class="sh-line"></div></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:500;color:var(--black)">Analizar campo:</span>
+      <div id="c-field-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+      <span style="margin-left:auto;font-size:10px;color:var(--gray-500)">Contactos por valor · distribución en pipeline · útil para segmentar campañas</span>
+    </div>
+    <div class="table-wrap" id="c-field-table"></div>
+  </div>
+</div>
+
+<!-- FLUJOS -->
+<div class="page" id="page-flujos">
+  <div class="page-header"><div class="page-title">Flujos</div><div class="page-desc">Performance de flujos automatizados · etapas, caídas, tipificaciones y resolución</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">🔀</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Etapas alcanzadas por flujo, puntos de abandono, tipificaciones automáticas y tasa de resolución sin intervención humana.</div><div class="cs-pills"><span class="cs-pill">Etapas por flujo</span><span class="cs-pill">Puntos de caída</span><span class="cs-pill">Tasa de resolución</span><span class="cs-pill">Escalaciones generadas</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- SMARTON -->
+<div class="page" id="page-smarton">
+  <div class="page-header"><div class="page-title">Smarton de voz</div><div class="page-desc">Performance del agente de voz inteligente · resolución, duración y derivaciones</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">🔊</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Llamadas atendidas por Smarton, duración promedio, intenciones detectadas, tasa de resolución autónoma y derivaciones a agente humano.</div><div class="cs-pills"><span class="cs-pill">Llamadas atendidas</span><span class="cs-pill">Duración promedio</span><span class="cs-pill">Tasa resolución IA</span><span class="cs-pill">Derivaciones a humano</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- RENDIMIENTO -->
+<div class="page" id="page-rendimiento">
+  <div class="page-header"><div class="page-title">Rendimiento de agentes</div><div class="page-desc">SLA, tiempos de respuesta, carga y conversión por agente y grupo</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">👥</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Cumplimiento de SLA por agente, tiempo promedio de primera respuesta, conversaciones atendidas, tipificaciones y conversión individual.</div><div class="cs-pills"><span class="cs-pill">SLA por agente</span><span class="cs-pill">Carga de trabajo</span><span class="cs-pill">Conversión individual</span><span class="cs-pill">Tipificaciones</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- LLAMADAS -->
+<div class="page" id="page-llamadas">
+  <div class="page-header"><div class="page-title">Llamadas</div><div class="page-desc">Historial y métricas de llamadas realizadas por agentes dentro de la plataforma</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">📞</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Llamadas realizadas por agente, duración, resultado, vinculación con conversación de WhatsApp y distribución por grupo.</div><div class="cs-pills"><span class="cs-pill">Llamadas por agente</span><span class="cs-pill">Duración promedio</span><span class="cs-pill">Resultado de llamada</span><span class="cs-pill">Vinculación a chat</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- ESTATUS -->
+<div class="page" id="page-estatus">
+  <div class="page-header"><div class="page-title">Estatus de agentes</div><div class="page-desc">Histórico de disponibilidad · conectado, ausente, ocupado y desconectado</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">🟢</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Horas conectadas por agente, distribución de estados a lo largo del día, ausencias y cobertura por turno y grupo.</div><div class="cs-pills"><span class="cs-pill">Horas conectadas</span><span class="cs-pill">Estados por turno</span><span class="cs-pill">Ausencias</span><span class="cs-pill">Cobertura por hora</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- CAMPAÑAS -->
+<div class="page" id="page-campanas">
+  <div class="page-header"><div class="page-title">Campañas activas</div><div class="page-desc">Performance de campañas masivas, plantillas individuales y webhooks de salida</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">📣</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Tasa de respuesta y conversión por campaña, alcance por plantilla y comparativa entre campañas del período.</div><div class="cs-pills"><span class="cs-pill">Tasa de respuesta</span><span class="cs-pill">Conversión por campaña</span><span class="cs-pill">Alcance de plantillas</span><span class="cs-pill">Comparativa períodos</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- PAUTA -->
+<div class="page" id="page-pauta">
+  <div class="page-header">
+    <div class="ph-row">
+      <div class="ph-left">
+        <div class="page-title" id="pauta-title">Click to WA · Meta</div>
+        <div class="page-updated">Última actualización de datos: <span>hoy 9:30 AM</span></div>
+      </div>
+      <div class="ph-right page-desc" id="pauta-desc">Performance de conversaciones iniciadas desde anuncios de Facebook e Instagram · trazabilidad desde el clic hasta la venta</div>
+    </div>
+  </div>
+  <div class="ai-search-wrap">
+    <div class="ai-search-inner">
+      <input class="ai-search-input" id="pauta-search-placeholder" type="text" placeholder="Pregunta lo que quieras sobre click to wa · meta..." onkeydown="if(event.key==='Enter')sendFromSearch('pauta-search-placeholder')">
+      <button class="ai-search-submit" onclick="sendFromSearch('pauta-search-placeholder')">↑</button>
+    </div>
+    <button class="ai-search-doc-btn" onclick="toggleDocPanel('doc-meta')">📖 Ver documentación del reporte</button>
+  </div>
+  <div class="subtabs">
+    <button class="stab-btn active" onclick="showStab('stab-resumen',this)">Resumen de canales</button>
+    <button class="stab-btn" onclick="showStab('stab-meta',this);renderMetaCtwa()">📘 Click to WA · Meta</button>
+    <button class="stab-btn" onclick="showStab('stab-google',this)">🟢 Click to WA · Google</button>
+    <button class="stab-btn" onclick="showStab('stab-web',this)">🌐 Tráfico web</button>
+  </div>
+  <div class="stab-panel active" id="stab-resumen">
+    <div class="sh"><span class="sh-title">Comparativa de canales</span><div class="sh-line"></div><span style="font-size:10px;color:var(--gray-300);white-space:nowrap">● mejor &nbsp; ● peor</span></div>
+    <div class="pauta-resumen-grid">
+      <div class="pauta-canal-col"><div class="pauta-col-header"><div class="pauta-col-accent" style="background:#1565C0"></div><div><div class="pauta-col-name">📘 Click to WA · Meta</div><div class="pauta-col-sub">Facebook & Instagram Ads</div></div></div><div class="pauta-metrics" id="metrics-meta"></div></div>
+      <div class="pauta-canal-col"><div class="pauta-col-header"><div class="pauta-col-accent" style="background:#2E7D32"></div><div><div class="pauta-col-name">🟢 Click to WA · Google</div><div class="pauta-col-sub">Google Ads</div></div></div><div class="pauta-metrics" id="metrics-google"></div></div>
+      <div class="pauta-canal-col"><div class="pauta-col-header"><div class="pauta-col-accent" style="background:var(--orange)"></div><div><div class="pauta-col-name">🌐 Tráfico web</div><div class="pauta-col-sub">Landing → WhatsApp</div></div></div><div class="pauta-metrics" id="metrics-web"></div></div>
+    </div>
+    <div class="pauta-chart-grid">
+      <div class="card"><div class="card-title">Conversaciones generadas por canal</div><div class="card-sub">Comparativa del período</div><div class="legend"><div class="leg-item"><span class="leg-dot" style="background:#1565C0"></span>Meta</div><div class="leg-item"><span class="leg-dot" style="background:#2E7D32"></span>Google</div><div class="leg-item"><span class="leg-dot" style="background:#E8590C"></span>Web</div></div><div style="position:relative;width:100%;height:220px"><canvas id="chart-pauta-conv"></canvas></div></div>
+      <div class="card"><div class="card-title">Costo por conversación</div><div class="card-sub">USD · menor es mejor</div><div style="position:relative;width:100%;height:220px"><canvas id="chart-pauta-cpc"></canvas></div></div>
+      <div class="card"><div class="card-title">Ventas obtenidas por canal</div><div class="card-sub">Comparativa del período</div><div style="position:relative;width:100%;height:220px"><canvas id="chart-pauta-ventas"></canvas></div></div>
+      <div class="card"><div class="card-title">Costo por venta</div><div class="card-sub">USD · menor es mejor</div><div style="position:relative;width:100%;height:220px"><canvas id="chart-pauta-cpv"></canvas></div></div>
+    </div>
+  </div>
+  <div class="stab-panel" id="stab-meta">
+    <div class="canal-header"><div class="canal-icon-wrap canal-icon-meta">📘</div><div class="canal-header-text"><div class="canal-name">Click to WA · Meta</div><div class="canal-sub">Conversaciones generadas desde anuncios de Facebook e Instagram</div></div></div>
+    <div class="filter-bar">
+      <span class="filter-label">Período</span><div class="filter-divider"></div>
+      <div class="preset-group">
+        <button class="preset-btn" onclick="setMetaPeriod(7,this)">7d</button>
+        <button class="preset-btn active" onclick="setMetaPeriod(30,this)">30d</button>
+        <button class="preset-btn" onclick="setMetaPeriod(90,this)">90d</button>
+      </div>
+      <div class="filter-divider"></div>
+      <span class="filter-label">Filtros</span><div class="filter-divider"></div>
+      <select id="mf-cuenta"><option value="">Todas las cuentas</option></select>
+      <select id="mf-camp"><option value="">Todas las campañas</option></select>
+      <button class="reset-btn" onclick="resetMetaFilters()">Limpiar</button>
+      <button class="apply-btn" onclick="renderMetaCtwa()">Aplicar</button>
+    </div>
+    <div class="kpi-grid" id="meta-kpis" style="margin-bottom:16px;grid-template-columns:repeat(4,1fr)"></div>
+    <div class="grid-6040" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">Conversaciones e importe gastado por día</div>
+        <div class="card-sub">Mayo 2024 · barras = conversaciones · línea = gasto USD</div>
+        <div style="position:relative;width:100%;height:240px"><canvas id="chart-meta-daily"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Embudo de etapas y ventas</div>
+        <div class="card-sub">Desde conversación iniciada hasta venta</div>
+        <div style="position:relative;width:100%;height:220px"><canvas id="chart-meta-funnel"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tabs-bar" style="border-bottom:1px solid var(--gray-200);margin-bottom:0;padding:0 4px">
+        <button class="tab-btn active" onclick="setMetaTab('camp',this)">Por campaña</button>
+        <button class="tab-btn" onclick="setMetaTab('aud',this)">Por audiencia</button>
+        <button class="tab-btn" onclick="setMetaTab('ad',this)">Por anuncio</button>
+      </div>
+      <div class="tab-panel active table-wrap" id="meta-tab-camp"></div>
+      <div class="tab-panel table-wrap" id="meta-tab-aud"></div>
+      <div class="tab-panel table-wrap" id="meta-tab-ad"></div>
+    </div>
+  </div>
+  <div class="stab-panel" id="stab-google">
+    <div class="canal-header"><div class="canal-icon-wrap canal-icon-google">🟢</div><div class="canal-header-text"><div class="canal-name">Click to WA · Google</div><div class="canal-sub">Conversaciones desde Google Ads con CTA de WhatsApp</div></div></div>
+    <div class="coming-soon" style="min-height:45vh"><div class="cs-icon">🟢</div><div class="cs-title">Detalle Google en construcción</div><div class="cs-pills"><span class="cs-pill">Por keyword</span><span class="cs-pill">Por campaña</span><span class="cs-pill">CPL</span><span class="cs-pill">Quality score</span></div><div class="cs-tag">Próximamente</div></div>
+  </div>
+  <div class="stab-panel" id="stab-web">
+    <div class="canal-header"><div class="canal-icon-wrap canal-icon-web">🌐</div><div class="canal-header-text"><div class="canal-name">Tráfico web</div><div class="canal-sub">Sesiones en landing con redirección a WhatsApp</div></div></div>
+    <div class="coming-soon" style="min-height:45vh"><div class="cs-icon">🌐</div><div class="cs-title">Detalle web en construcción</div><div class="cs-pills"><span class="cs-pill">Sesiones web</span><span class="cs-pill">Clics botón WA</span><span class="cs-pill">Tasa de inicio</span><span class="cs-pill">Por fuente</span></div><div class="cs-tag">Próximamente</div></div>
+  </div>
+</div>
+
+<!-- FACTURACIÓN -->
+<div class="page" id="page-facturacion">
+  <div class="page-header"><div class="page-title">Facturación</div><div class="page-desc">Ingresos facturados, estado de cobros y evolución por plan o cliente</div><span class="page-tag tag-soon">Próximamente</span></div>
+  <div class="coming-soon"><div class="cs-icon">💳</div><div class="cs-title">Reporte en construcción</div><div class="cs-desc">Montos facturados por período, comparativa vs período anterior, estado de cobros y desglose por plan o servicio.</div><div class="cs-pills"><span class="cs-pill">Ingresos por período</span><span class="cs-pill">Estado de cobros</span><span class="cs-pill">Desglose por plan</span><span class="cs-pill">Proyección</span></div><div class="cs-tag">Próximamente</div></div>
+</div>
+
+<!-- CONFIGURACIÓN -->
+<div class="page" id="page-config">
+  <div class="page-header">
+    <div class="page-title">Configuración</div>
+    <div class="page-desc">Parámetros que afectan KPIs y métricas de todos los reportes activos</div>
+  </div>
+  <div class="cfg-layout">
+    <div class="cfg-section">
+      <div class="cfg-head">
+        <div class="cfg-head-icon">⏱</div>
+        <div><div class="cfg-head-title">SLA de primera respuesta</div><div class="cfg-head-desc">Tiempo máximo esperado para que un agente responda al cliente</div></div>
+      </div>
+      <div class="cfg-body">
+        <div class="cfg-field-label">Tiempo objetivo</div>
+        <div class="cfg-row">
+          <input type="number" id="cfg-sla" class="cfg-num" value="3" min="1" max="120">
+          <span class="cfg-hint">minutos desde que se asigna el caso al agente</span>
+        </div>
+      </div>
+    </div>
+    <div class="cfg-section">
+      <div class="cfg-head">
+        <div class="cfg-head-icon">🔢</div>
+        <div><div class="cfg-head-title">Etapas del cliente</div><div class="cfg-head-desc">Nombres de cada etapa del pipeline de ventas</div></div>
+      </div>
+      <div class="cfg-body" id="cfg-stages-body"></div>
+    </div>
+    <div class="cfg-section">
+      <div class="cfg-head">
+        <div class="cfg-head-icon">✅</div>
+        <div><div class="cfg-head-title">Etapa de calificación</div><div class="cfg-head-desc">¿En qué etapa un contacto se considera "calificado"? Se usa en la tabla de rendimiento por campo.</div></div>
+      </div>
+      <div class="cfg-body">
+        <div class="cfg-field-label">Etapa que equivale a "Calificado"</div>
+        <select id="cfg-calificado" class="cfg-select"></select>
+      </div>
+    </div>
+    <div class="cfg-section">
+      <div class="cfg-head">
+        <div class="cfg-head-icon">🎯</div>
+        <div><div class="cfg-head-title">Métricas de conversión</div><div class="cfg-head-desc">Definí una o más métricas de conversión para usar en los reportes. La primera es la principal.</div></div>
+      </div>
+      <div class="cfg-body">
+        <div id="conv-metric-list" class="conv-metric-list"></div>
+        <button class="conv-add-btn" onclick="addConvMetric()">＋ Agregar métrica</button>
+      </div>
+    </div>
+    <div class="cfg-footer-bar">
+      <span class="cfg-footer-note">Los cambios se aplican a todos los reportes al recalcular</span>
+      <button class="cfg-apply" onclick="applyConfig()">↺ Recalcular KPIs con esta configuración</button>
+    </div>
+  </div>
+</div>
+
+<!-- VER TABLAS -->
+<div class="page" id="page-tables">
+  <div class="page-header">
+    <div class="page-title">Ver tablas</div>
+    <div class="page-desc">Estructura y datos de las 12 tablas que alimentan los reportes</div>
+  </div>
+  <div class="tbl-list" id="tbl-list"></div>
+</div>
+
+</div><!-- /main-wrap -->
+
+<div class="cfg-toast" id="cfg-toast">✓ KPIs recalculados con la nueva configuración</div>
+
+<script>
+// ── SEEDED RNG ─────────────────────────────────────────────────
+const seed=(s=>()=>{s^=s<<13;s^=s>>17;s^=s<<5;return(s>>>0)/4294967296;})(42);
+const pick=a=>a[Math.floor(seed()*a.length)];
+const ri=(a,b)=>Math.floor(seed()*(b-a+1))+a;
+
+// ── CONSTANTS ──────────────────────────────────────────────────
+const ORIGENES=['inbound organico','click to wa','campañas','webhooks','plantillas individuales'];
+const BOTS=['Flujo Financiamiento','Flujo Tasación','Flujo Soporte'];
+const GRUPOS=['Equipo Ventas','Equipo Financiamiento','Equipo Soporte'];
+const BOT_TIPIFS=['interesado','no califica','consulta resuelta','derivar','sin respuesta bot'];
+const AGENT_TIPIFS=['venta','sin respuesta','reagendar','no califica','pendiente docs'];
+const CONV_RATES={'click to wa':.18,'campañas':.12,'plantillas individuales':.14,'inbound organico':.08,'webhooks':.06};
+const AGENT_NAMES=['Ana García','Carlos López','María Fernández','Luis Martínez','Sofía Rodríguez'];
+const CONTACT_NAMES=['Tomás Herrera','Valentina Cruz','Diego Morales','Camila Reyes','Martín Vargas','Isabella Ponce','Alejandro Ruiz','Paula Soto','Ricardo Díaz','Laura Mendoza','José Romero','Natalia Vega','Fernando Castillo','Andrea López','Sebastián Torres','Mónica Ramos','Gabriel Flores','Daniela Paredes','Andrés Gómez','Lucía Navarro'];
+const COUNTRIES=['MX','AR','CO','CL','PE','UY'];
+const INTENTS=['consulta de financiamiento','tasación de vehículo','estado de crédito','agendar visita','info modelos disponibles','documentos pendientes','refinanciamiento'];
+const UTM_SOURCES=['google','facebook','instagram','direct','email'];
+const UTM_CAMPAIGNS=['financiamiento_0pct','retargeting_tasacion','promo_mayo_autos','leads_0km','soporte_post_venta'];
+const LANDINGS=['/financiamiento','/promo-mayo-autos','/tasacion-online','/catalogo-0km'];
+const TMPL_NAMES=['Bienvenida_Nuevo_Lead','Seguimiento_Sin_Respuesta','Promo_Tasa_0_Mayo','Recordatorio_Visita_Concesionaria','Documentos_Pendientes'];
+const CAMP_NAMES=['Campaña Leads Financiamiento','Reactivación Sin Respuesta','Promo Tasa 0% Mayo','Seguimiento Tasación','Recordatorio Documentos'];
+
+// ── DATA GENERATION (report data) ─────────────────────────────
+function genRecord(mo){
+  const origen=pick(ORIGENES);
+  const dir=['campañas','plantillas individuales'].includes(origen)?'outbound':'inbound';
+  const d=new Date(2024,3+mo,ri(1,30),ri(8,20),ri(0,59),ri(0,59));
+  const escalado=seed()<.55;
+  const fechaAsig=escalado?new Date(d.getTime()+ri(1,15)*60000):null;
+  const firstResp=escalado?new Date(fechaAsig.getTime()+ri(30,600)*1000):null;
+  const respSecs=firstResp?Math.round((firstResp-fechaAsig)/1000):null;
+  const isSale=seed()<(CONV_RATES[origen]||.08);
+  return{origen,dir,fecha:d,bot:pick(BOTS),grupo:escalado?pick(GRUPOS):null,
+    escalado,respSecs,
+    isSale,botTipif:seed()<.8?pick(BOT_TIPIFS):null,
+    agentTipif:escalado&&seed()<.9?pick(AGENT_TIPIFS):null,
+    maxStage:'stage_'+ri(1,4)};
+}
+const DATA=Array.from({length:200},()=>genRecord(1));
+const PREV=Array.from({length:160},()=>genRecord(0));
+let filtered=[...DATA];
+let prevFiltered=[...PREV];
+let currentPeriodDays=30;
+
+function getPeriodSlice(days){
+  if(days===7) return{curr:DATA.filter(d=>d.fecha.getDate()>=25),prev:PREV.filter(d=>d.fecha.getDate()>=25),label:'Mayo 25–31',prevLabel:'Abr 25–30'};
+  if(days===90) return{curr:[...DATA,...PREV],prev:[],label:'Mar–May 2024',prevLabel:'Sin datos previos'};
+  return{curr:[...DATA],prev:[...PREV],label:'Mayo 2024',prevLabel:'Abril 2024'};
+}
+function setPeriod(days,btn){
+  currentPeriodDays=days;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+function updatePeriodLabels(){
+  const s=getPeriodSlice(currentPeriodDays);
+  const lc=document.getElementById('leg-current'),lp=document.getElementById('leg-prev');
+  if(lc)lc.textContent=s.label;
+  if(lp)lp.textContent=s.prevLabel;
+}
+function updateReportMeta(){
+  const el=document.getElementById('report-updated-time');
+  if(el)el.textContent='31/05/2024 · 08:00 hs';
+}
+
+// ── CONFIG ─────────────────────────────────────────────────────
+let CONFIG={
+  sla_target_min:3,
+  stages:[
+    {id:'stage_1',name:'Primer contacto'},
+    {id:'stage_2',name:'Calificado'},
+    {id:'stage_3',name:'Propuesta enviada'},
+    {id:'stage_4',name:'Cerrado'}
+  ],
+  calificado_stage:'stage_2',
+  conversions:[
+    {id:'conv_1',name:'Venta',type:'typification',values:['venta']}
+  ]
+};
+
+function isConversion(d,conv){
+  const c=conv||CONFIG.conversions[0];
+  if(!c) return false;
+  if(c.type==='cita') return d.agentTipif==='reagendar';
+  if(c.type==='typification') return c.values.includes(d.agentTipif);
+  return c.values.includes(d.maxStage);
+}
+function withinSLA(d){
+  if(d.respSecs===null) return null;
+  return d.respSecs<=CONFIG.sla_target_min*60;
+}
+
+// ── DB TABLES (for Ver tablas) ─────────────────────────────────
+function p2(n){return String(n).padStart(2,'0');}
+function makeDate(y,m,d,h,mi){return`${y}-${p2(m)}-${p2(d)} ${p2(h)}:${p2(mi)}:00`;}
+
+const DB={};
+
+DB.conversations=Array.from({length:120},(_, i)=>{
+  const mo=i<60?4:5; const day=ri(1,28); const h=ri(8,20); const mn=ri(0,59);
+  const escalado=seed()<.55; const origen=pick(ORIGENES);
+  const agentTipif=escalado&&seed()<.9?pick(AGENT_TIPIFS):null;
+  const isSale=agentTipif==='venta';
+  return{
+    conversation_id:`CONV-${p2(mo)}-${String(i+1).padStart(3,'0')}`,
+    contact_id:`C${String(ri(1,60)).padStart(3,'0')}`,
+    origin:origen,flow_name:pick(BOTS),
+    stage:'stage_'+ri(1,4),
+    typification:agentTipif,
+    created_at:makeDate(2024,mo,day,h,mn),
+    closed_at:escalado?makeDate(2024,mo,day,Math.min(h+ri(0,3),23),ri(0,59)):null,
+    escalated:escalado,is_sale:isSale,
+    status:seed()<.9?'closed':'open'
+  };
+});
+
+DB.contacts=Array.from({length:60},(_,i)=>{
+  const total=ri(1,3);
+  return{
+    contact_id:`C${String(i+1).padStart(3,'0')}`,
+    phone:`+52${ri(1000000000,9999999999)}`,
+    name:CONTACT_NAMES[i%CONTACT_NAMES.length]+' '+(i>19?'M.':'L.'),
+    country:pick(COUNTRIES),
+    first_contact_at:`2024-0${ri(1,5)}-${p2(ri(1,28))}`,
+    total_conversations:total,
+    is_returning:total>1
+  };
+});
+
+DB.agent_interactions=Array.from({length:110},(_,i)=>{
+  const agent=AGENT_NAMES[i%AGENT_NAMES.length];
+  const group=i%5<2?'Equipo Ventas':i%5<4?'Equipo Soporte':'Equipo Cobranza';
+  const mo=i<55?4:5; const day=ri(1,28); const h=ri(8,20); const mn=ri(0,59);
+  const respMin=seed()<.7?ri(1,3):ri(4,25);
+  return{
+    interaction_id:`INT-${String(i+1).padStart(3,'0')}`,
+    conversation_id:`CONV-${p2(mo)}-${String(ri(1,60)).padStart(3,'0')}`,
+    agent_name:agent,group_name:group,
+    assigned_at:makeDate(2024,mo,day,h,mn),
+    first_response_at:makeDate(2024,mo,day,h,Math.min(mn+respMin,59)),
+    first_response_time_min:respMin,
+    messages_sent:ri(3,30),
+    typification:pick(AGENT_TIPIFS),
+    is_sale:seed()<.12
+  };
+});
+
+DB.agent_status=Array.from({length:40},(_,i)=>{
+  const agent=AGENT_NAMES[i%AGENT_NAMES.length];
+  const group=i%5<2?'Equipo Ventas':i%5<4?'Equipo Soporte':'Equipo Cobranza';
+  const status=pick(['online','online','online','away','busy','offline']);
+  const h=ri(7,19); const mn=ri(0,59); const dur=ri(15,480);
+  const day=ri(1,28);
+  return{
+    status_id:`ST-${String(i+1).padStart(3,'0')}`,
+    agent_name:agent,group_name:group,status,
+    started_at:makeDate(2024,5,day,h,mn),
+    ended_at:makeDate(2024,5,day,Math.min(h+Math.floor(dur/60),23),mn),
+    duration_min:dur,
+    date:`2024-05-${p2(day)}`
+  };
+});
+
+DB.agent_calls=Array.from({length:35},(_,i)=>{
+  const agent=AGENT_NAMES[i%AGENT_NAMES.length];
+  const group=i%5<2?'Equipo Ventas':i%5<4?'Equipo Soporte':'Equipo Cobranza';
+  const result=seed()<.7?'answered':seed()<.5?'no_answer':'busy';
+  const day=ri(1,28); const h=ri(8,20);
+  return{
+    call_id:`CALL-${String(i+1).padStart(3,'0')}`,
+    conversation_id:seed()<.7?`CONV-05-${String(ri(1,60)).padStart(3,'0')}`:null,
+    agent_name:agent,group_name:group,
+    contact_phone:`+52${ri(1000000000,9999999999)}`,
+    duration_sec:result==='answered'?ri(30,600):0,
+    result,
+    started_at:makeDate(2024,5,day,h,ri(0,59)),
+    date:`2024-05-${p2(day)}`
+  };
+});
+
+DB.smarton_calls=Array.from({length:25},(_,i)=>{
+  const resolved=seed()<.65;
+  const day=ri(1,28); const h=ri(8,23);
+  return{
+    smarton_call_id:`SMT-${String(i+1).padStart(3,'0')}`,
+    contact_phone:`+52${ri(1000000000,9999999999)}`,
+    conversation_id:seed()<.6?`CONV-05-${String(ri(1,60)).padStart(3,'0')}`:null,
+    intent_detected:pick(INTENTS),
+    duration_sec:ri(20,220),
+    resolved_by_ai:resolved,
+    escalated_to_agent:!resolved,
+    started_at:makeDate(2024,5,day,h,ri(0,59)),
+    date:`2024-05-${p2(day)}`
+  };
+});
+
+DB.campaigns=Array.from({length:12},(_,i)=>{
+  const sent=ri(200,2000);
+  const deliv=Math.round(sent*(.88+seed()*.08));
+  const read=Math.round(deliv*(.4+seed()*.3));
+  const replied=Math.round(read*(.08+seed()*.15));
+  const conv_new=Math.round(replied*(.5+seed()*.4));
+  const mo=i<6?4:5; const day=ri(1,28);
+  return{
+    campaign_id:`CAMP-${String(i+1).padStart(3,'0')}`,
+    name:CAMP_NAMES[i%CAMP_NAMES.length]+` (${mo===4?'Abr':'May'})`,
+    template_name:TMPL_NAMES[i%TMPL_NAMES.length],
+    type:pick(['mass','mass','individual','webhook']),
+    sent_at:`2024-${p2(mo)}-${p2(day)}`,
+    total_sent:sent,delivered:deliv,read:read,replied:replied,
+    conversations_created:conv_new,
+    conversations_updated:Math.round(replied-conv_new),
+    sales:Math.round(conv_new*.12)
+  };
+});
+
+DB.billing=Array.from({length:6},(_,i)=>{
+  const mo=i+1;
+  const wa_convs=1200+i*180+ri(0,100);
+  const wa_cost=parseFloat((wa_convs*0.058).toFixed(2));
+  const platform=299+(i>3?100:0);
+  return{
+    billing_id:`BILL-${String(i+1).padStart(3,'0')}`,
+    period:`2024-${p2(mo)}`,
+    whatsapp_conversations:wa_convs,
+    whatsapp_cost_usd:wa_cost,
+    platform_fee_usd:platform,
+    total_usd:parseFloat((wa_cost+platform).toFixed(2)),
+    status:i<5?'paid':'pending',
+    invoice_date:`2024-${p2(mo)}-01`
+  };
+});
+
+DB.paid_ads_meta=Array.from({length:20},(_,i)=>{
+  const day=i+1; const spend=ri(120,320);
+  const convs=ri(8,28); const sales=Math.round(convs*(.12+seed()*.1));
+  return{
+    ad_id:`META-${String(i+1).padStart(3,'0')}`,
+    date:`2024-05-${p2(day)}`,
+    campaign_name:pick(['Ventas_Mayo_Brand','Leads_Retargeting','Promo_20OFF']),
+    ad_set_name:pick(['Audiencia_Similares','Remarketing_30d','Intereses_Tecnologia']),
+    spend_usd:spend,impressions:ri(2000,8000),clicks:ri(80,400),
+    conversations_started:convs,sales,
+    cost_per_conversation:parseFloat((spend/convs).toFixed(2)),
+    cost_per_sale:sales>0?parseFloat((spend/sales).toFixed(2)):null
+  };
+});
+
+DB.paid_ads_google=Array.from({length:20},(_,i)=>{
+  const day=i+1; const spend=ri(80,220);
+  const convs=ri(5,20); const sales=Math.round(convs*(.1+seed()*.12));
+  return{
+    ad_id:`GGL-${String(i+1).padStart(3,'0')}`,
+    date:`2024-05-${p2(day)}`,
+    campaign_name:pick(['Search_Brand','Search_Competencia','Smart_Shopping']),
+    ad_group_name:pick(['Palabras_Marca','Competidores','Producto_Principal']),
+    spend_usd:spend,impressions:ri(1000,5000),clicks:ri(40,200),
+    conversations_started:convs,sales,
+    cost_per_conversation:parseFloat((spend/convs).toFixed(2)),
+    cost_per_sale:sales>0?parseFloat((spend/sales).toFixed(2)):null
+  };
+});
+
+DB.paid_ads_web=Array.from({length:15},(_,i)=>{
+  const day=i+1; const sessions=ri(120,600);
+  const wa_clicks=Math.round(sessions*(.08+seed()*.12));
+  const convs=Math.round(wa_clicks*(.3+seed()*.3));
+  const sales=Math.round(convs*.1);
+  return{
+    entry_id:`WEB-${String(i+1).padStart(3,'0')}`,
+    date:`2024-05-${p2(day)}`,
+    landing_page:pick(LANDINGS),
+    utm_source:pick(UTM_SOURCES),
+    utm_campaign:pick(UTM_CAMPAIGNS),
+    sessions,whatsapp_clicks:wa_clicks,
+    conversations_started:convs,sales,
+    conversion_rate:parseFloat((convs/sessions*100).toFixed(1))
+  };
+});
+
+DB.meta_ads=(()=>{
+  const ACCOUNTS=[
+    {id:'ACC-001',name:'Mega Travel Autos'},
+    {id:'ACC-002',name:'Agencia Digital MX'}
+  ];
+  const CAMPAIGNS=[
+    {id:'C-001',acc:'ACC-001',name:'Leads Financiamiento Mayo'},
+    {id:'C-002',acc:'ACC-001',name:'Reactivación Sin Respuesta'},
+    {id:'C-003',acc:'ACC-002',name:'Promo Tasa 0% Mayo'},
+    {id:'C-004',acc:'ACC-002',name:'Tasación de Vehículos'}
+  ];
+  const AUDIENCES=[
+    {id:'AUD-01',camp:'C-001',name:'Hombres 28-45 interés autos CDMX'},
+    {id:'AUD-02',camp:'C-001',name:'Lookalike clientes activos 1%'},
+    {id:'AUD-03',camp:'C-002',name:'Retargeting sin respuesta 30d'},
+    {id:'AUD-04',camp:'C-003',name:'Interés financiamiento automotriz'},
+    {id:'AUD-05',camp:'C-003',name:'Lookalike compradores 2%'},
+    {id:'AUD-06',camp:'C-004',name:'Propietarios autos 3-7 años'},
+    {id:'AUD-07',camp:'C-004',name:'Búsqueda tasación vehículo'}
+  ];
+  const AD_NAMES=['Video testimonial cliente','Banner estático promo','Carrusel modelos disponibles','Animación tasa 0%','Imagen antes/después tasación','Story financiamiento rápido'];
+  const rows=[];
+  let idx=1;
+  AUDIENCES.forEach(aud=>{
+    const camp=CAMPAIGNS.find(c=>c.id===aud.camp);
+    const acc=ACCOUNTS.find(a=>a.id===camp.acc);
+    const nAds=ri(1,2);
+    const startDay=ri(1,10);
+    for(let a=0;a<nAds;a++){
+      const convs=ri(18,95);
+      const spend=ri(180,1100);
+      const asig=Math.floor(convs*(0.72+seed()*0.22));
+      const ventas=Math.floor(asig*(0.03+seed()*0.06));
+      const ratio=0.72+seed()*0.35;
+      rows.push({
+        ad_id:`AD-${String(idx).padStart(3,'0')}`,
+        ad_name:pick(AD_NAMES),
+        audience_id:aud.id,
+        audience_name:aud.name,
+        campaign_id:camp.id,
+        campaign_name:camp.name,
+        account_id:acc.id,
+        account_name:acc.name,
+        wa_link:`https://wa.me/521${ri(55,59)}${ri(10000000,99999999)}`,
+        fecha_inicio:`2024-05-${String(startDay).padStart(2,'0')}`,
+        importe_gastado:spend,
+        conversaciones:convs,
+        asignadas:asig,
+        ventas,
+        prev_importe_gastado:Math.round(spend*ratio),
+        prev_conversaciones:Math.round(convs*ratio),
+        prev_asignadas:Math.round(asig*ratio),
+        prev_ventas:Math.round(ventas*ratio)
+      });
+      idx++;
+    }
+  });
+  return rows;
+})();
+
+DB.contact_custom_fields=(()=>{
+  const MARCAS_MODELOS={
+    'Honda':['Civic','HR-V','CR-V','Fit'],
+    'Toyota':['Corolla','Hilux','RAV4','Yaris'],
+    'Geely':['Coolray','Okavango','Emgrand','Atlas'],
+    'Volkswagen':['Polo','Golf','Vento','Tiguan'],
+    'Ford':['Territory','Ranger','Escape','EcoSport'],
+    'Chevrolet':['Tracker','S10','Onix','Captiva']
+  };
+  const MARCAS=Object.keys(MARCAS_MODELOS);
+  const FINANC=['leasing','crédito_directo','financiamiento_banco','contado'];
+  const LETRAS='ABCDEFGHJKLMNPRSTUVWXYZ';
+  const rows=[];
+  let idx=1;
+  // Generate ~10 entries per field type across 60 contacts
+  const FIELD_COUNT=80;
+  for(let i=0;i<FIELD_COUNT;i++){
+    const cid=`C${String(ri(1,60)).padStart(3,'0')}`;
+    const fieldType=i%6;
+    let fname,fval,ftype;
+    if(fieldType===0){
+      const marca=pick(MARCAS);
+      fname='marca_auto';fval=marca;ftype='text';
+    } else if(fieldType===1){
+      const marca=pick(MARCAS);
+      fname='modelo_auto';fval=pick(MARCAS_MODELOS[marca]);ftype='text';
+    } else if(fieldType===2){
+      fname='tipo_financiamiento';fval=pick(FINANC);ftype='text';
+    } else if(fieldType===3){
+      const l1=LETRAS[ri(0,LETRAS.length-1)];
+      const l2=LETRAS[ri(0,LETRAS.length-1)];
+      const l3=LETRAS[ri(0,LETRAS.length-1)];
+      fname='patente';fval=`${l1}${l2}${ri(100,999)}-${l3}${LETRAS[ri(0,LETRAS.length-1)]}`;ftype='text';
+    } else if(fieldType===4){
+      fname='presupuesto_usd';fval=String(ri(8,45)*1000);ftype='number';
+    } else {
+      fname='anio_vehiculo';fval=String(ri(2019,2024));ftype='number';
+    }
+    rows.push({field_id:`CF-${String(idx++).padStart(3,'0')}`,contact_id:cid,field_name:fname,field_value:fval,field_type:ftype});
+  }
+  return rows;
+})();
+
+// ── SCHEMA DEFINITION ──────────────────────────────────────────
+const SCHEMA=[
+  {id:'conversations',icon:'💬',desc:'Una fila por conversación de WhatsApp',data:()=>DB.conversations,fields:[
+    {name:'conversation_id',type:'STRING',desc:'Identificador único de la conversación'},
+    {name:'contact_id',type:'STRING',desc:'FK a la tabla contacts'},
+    {name:'origin',type:'STRING',desc:'Canal de origen: inbound_organic, click_to_wa, campaign, webhook, individual_template'},
+    {name:'flow_name',type:'STRING',desc:'Nombre del flujo de automatización que manejó la conversación (nullable)'},
+    {name:'stage',type:'STRING',desc:'Etapa máxima alcanzada en el pipeline (stage_1 a stage_4)'},
+    {name:'typification',type:'STRING',desc:'Tipificación final asignada por el agente (nullable)'},
+    {name:'created_at',type:'TIMESTAMP',desc:'Timestamp de creación de la conversación'},
+    {name:'closed_at',type:'TIMESTAMP',desc:'Timestamp de cierre (null si está abierta)'},
+    {name:'escalated',type:'BOOLEAN',desc:'Si fue escalada a un agente humano'},
+    {name:'is_sale',type:'BOOLEAN',desc:'Si resultó en una venta (derivado de CONFIG)'},
+    {name:'status',type:'STRING',desc:'Estado actual: open o closed'},
+  ]},
+  {id:'contacts',icon:'👤',desc:'Una fila por contacto único',data:()=>DB.contacts,fields:[
+    {name:'contact_id',type:'STRING',desc:'Identificador único del contacto'},
+    {name:'phone',type:'STRING',desc:'Teléfono con código de país'},
+    {name:'name',type:'STRING',desc:'Nombre completo del contacto'},
+    {name:'country',type:'STRING',desc:'Código ISO del país (MX, AR, CO, CL, PE, UY)'},
+    {name:'first_contact_at',type:'DATE',desc:'Fecha de la primera interacción'},
+    {name:'total_conversations',type:'INTEGER',desc:'Cantidad acumulada de conversaciones'},
+    {name:'is_returning',type:'BOOLEAN',desc:'True si tiene más de una conversación'},
+  ]},
+  {id:'agent_interactions',icon:'🧑‍💼',desc:'Una fila por agente que atendió un lead (puede haber varios por conversación)',data:()=>DB.agent_interactions,fields:[
+    {name:'interaction_id',type:'STRING',desc:'Identificador único de la interacción'},
+    {name:'conversation_id',type:'STRING',desc:'FK a conversations'},
+    {name:'agent_name',type:'STRING',desc:'Nombre del agente'},
+    {name:'group_name',type:'STRING',desc:'Grupo al que pertenece el agente'},
+    {name:'assigned_at',type:'TIMESTAMP',desc:'Timestamp de asignación al agente'},
+    {name:'first_response_at',type:'TIMESTAMP',desc:'Timestamp del primer mensaje enviado por el agente'},
+    {name:'first_response_time_min',type:'INTEGER',desc:'Minutos entre asignación y primera respuesta (base del SLA)'},
+    {name:'messages_sent',type:'INTEGER',desc:'Cantidad de mensajes enviados por el agente en esta interacción'},
+    {name:'typification',type:'STRING',desc:'Tipificación asignada por este agente'},
+    {name:'is_sale',type:'BOOLEAN',desc:'Si esta interacción resultó en venta'},
+  ]},
+  {id:'agent_status',icon:'🟢',desc:'Historial de estados de disponibilidad por agente',data:()=>DB.agent_status,fields:[
+    {name:'status_id',type:'STRING',desc:'Identificador único del registro de estado'},
+    {name:'agent_name',type:'STRING',desc:'Nombre del agente'},
+    {name:'group_name',type:'STRING',desc:'Grupo del agente'},
+    {name:'status',type:'STRING',desc:'Estado: online, away, busy, offline'},
+    {name:'started_at',type:'TIMESTAMP',desc:'Inicio del período en este estado'},
+    {name:'ended_at',type:'TIMESTAMP',desc:'Fin del período en este estado'},
+    {name:'duration_min',type:'INTEGER',desc:'Duración del estado en minutos'},
+    {name:'date',type:'DATE',desc:'Fecha del registro'},
+  ]},
+  {id:'agent_calls',icon:'📞',desc:'Llamadas realizadas por agentes humanos',data:()=>DB.agent_calls,fields:[
+    {name:'call_id',type:'STRING',desc:'Identificador único de la llamada'},
+    {name:'conversation_id',type:'STRING',desc:'FK a conversations (nullable si no está vinculada a un chat)'},
+    {name:'agent_name',type:'STRING',desc:'Nombre del agente que realizó la llamada'},
+    {name:'group_name',type:'STRING',desc:'Grupo del agente'},
+    {name:'contact_phone',type:'STRING',desc:'Teléfono del contacto llamado'},
+    {name:'duration_sec',type:'INTEGER',desc:'Duración de la llamada en segundos (0 si no fue atendida)'},
+    {name:'result',type:'STRING',desc:'Resultado: answered, no_answer, busy'},
+    {name:'started_at',type:'TIMESTAMP',desc:'Timestamp de inicio de la llamada'},
+    {name:'date',type:'DATE',desc:'Fecha de la llamada'},
+  ]},
+  {id:'smarton_calls',icon:'🔊',desc:'Llamadas atendidas por el agente de voz IA Smarton',data:()=>DB.smarton_calls,fields:[
+    {name:'smarton_call_id',type:'STRING',desc:'Identificador único de la llamada Smarton'},
+    {name:'contact_phone',type:'STRING',desc:'Teléfono del contacto'},
+    {name:'conversation_id',type:'STRING',desc:'FK a conversations si generó un chat (nullable)'},
+    {name:'intent_detected',type:'STRING',desc:'Intención detectada por la IA durante la llamada'},
+    {name:'duration_sec',type:'INTEGER',desc:'Duración de la llamada en segundos'},
+    {name:'resolved_by_ai',type:'BOOLEAN',desc:'Si Smarton resolvió la consulta sin derivar a agente'},
+    {name:'escalated_to_agent',type:'BOOLEAN',desc:'Si fue derivada a un agente humano'},
+    {name:'started_at',type:'TIMESTAMP',desc:'Timestamp de inicio'},
+    {name:'date',type:'DATE',desc:'Fecha de la llamada'},
+  ]},
+  {id:'campaigns',icon:'📣',desc:'Campañas de templates enviados (masivos, individuales o webhooks)',data:()=>DB.campaigns,fields:[
+    {name:'campaign_id',type:'STRING',desc:'Identificador único de la campaña'},
+    {name:'name',type:'STRING',desc:'Nombre descriptivo de la campaña'},
+    {name:'template_name',type:'STRING',desc:'Nombre del template de WhatsApp utilizado'},
+    {name:'type',type:'STRING',desc:'Tipo: mass, individual, webhook'},
+    {name:'sent_at',type:'DATE',desc:'Fecha de envío de la campaña'},
+    {name:'total_sent',type:'INTEGER',desc:'Cantidad total de mensajes enviados'},
+    {name:'delivered',type:'INTEGER',desc:'Mensajes entregados'},
+    {name:'read',type:'INTEGER',desc:'Mensajes leídos'},
+    {name:'replied',type:'INTEGER',desc:'Mensajes con respuesta del contacto'},
+    {name:'conversations_created',type:'INTEGER',desc:'Nuevas conversaciones generadas por esta campaña'},
+    {name:'conversations_updated',type:'INTEGER',desc:'Conversaciones activas donde se envió el template'},
+    {name:'sales',type:'INTEGER',desc:'Ventas generadas desde esta campaña'},
+  ]},
+  {id:'billing',icon:'💳',desc:'Facturación mensual de la plataforma',data:()=>DB.billing,fields:[
+    {name:'billing_id',type:'STRING',desc:'Identificador del registro de facturación'},
+    {name:'period',type:'STRING',desc:'Período en formato YYYY-MM'},
+    {name:'whatsapp_conversations',type:'INTEGER',desc:'Conversaciones de WhatsApp facturadas por Meta'},
+    {name:'whatsapp_cost_usd',type:'FLOAT',desc:'Costo de conversaciones WhatsApp en USD'},
+    {name:'platform_fee_usd',type:'FLOAT',desc:'Fee mensual de la plataforma PulseWA'},
+    {name:'total_usd',type:'FLOAT',desc:'Total facturado en USD'},
+    {name:'status',type:'STRING',desc:'Estado: paid o pending'},
+    {name:'invoice_date',type:'DATE',desc:'Fecha de emisión de la factura'},
+  ]},
+  {id:'paid_ads_meta',icon:'📘',desc:'Performance diario de anuncios Click to WA en Meta (Facebook/Instagram)',data:()=>DB.paid_ads_meta,fields:[
+    {name:'ad_id',type:'STRING',desc:'Identificador del registro'},
+    {name:'date',type:'DATE',desc:'Fecha del registro'},
+    {name:'campaign_name',type:'STRING',desc:'Nombre de la campaña en Meta Ads'},
+    {name:'ad_set_name',type:'STRING',desc:'Nombre del conjunto de anuncios'},
+    {name:'spend_usd',type:'FLOAT',desc:'Gasto del día en USD'},
+    {name:'impressions',type:'INTEGER',desc:'Impresiones del anuncio'},
+    {name:'clicks',type:'INTEGER',desc:'Clics en el anuncio'},
+    {name:'conversations_started',type:'INTEGER',desc:'Conversaciones de WhatsApp iniciadas desde el anuncio'},
+    {name:'sales',type:'INTEGER',desc:'Ventas generadas desde conversaciones de este anuncio'},
+    {name:'cost_per_conversation',type:'FLOAT',desc:'Gasto / conversaciones iniciadas'},
+    {name:'cost_per_sale',type:'FLOAT',desc:'Gasto / ventas generadas (nullable si sales=0)'},
+  ]},
+  {id:'paid_ads_google',icon:'🟢',desc:'Performance diario de anuncios Click to WA en Google Ads',data:()=>DB.paid_ads_google,fields:[
+    {name:'ad_id',type:'STRING',desc:'Identificador del registro'},
+    {name:'date',type:'DATE',desc:'Fecha del registro'},
+    {name:'campaign_name',type:'STRING',desc:'Nombre de la campaña en Google Ads'},
+    {name:'ad_group_name',type:'STRING',desc:'Nombre del grupo de anuncios'},
+    {name:'spend_usd',type:'FLOAT',desc:'Gasto del día en USD'},
+    {name:'impressions',type:'INTEGER',desc:'Impresiones del anuncio'},
+    {name:'clicks',type:'INTEGER',desc:'Clics en el anuncio'},
+    {name:'conversations_started',type:'INTEGER',desc:'Conversaciones de WhatsApp iniciadas'},
+    {name:'sales',type:'INTEGER',desc:'Ventas generadas'},
+    {name:'cost_per_conversation',type:'FLOAT',desc:'Gasto / conversaciones iniciadas'},
+    {name:'cost_per_sale',type:'FLOAT',desc:'Gasto / ventas (nullable si sales=0)'},
+  ]},
+  {id:'paid_ads_web',icon:'🌐',desc:'Tráfico web a landing pages con botón de WhatsApp',data:()=>DB.paid_ads_web,fields:[
+    {name:'entry_id',type:'STRING',desc:'Identificador del registro'},
+    {name:'date',type:'DATE',desc:'Fecha del registro'},
+    {name:'landing_page',type:'STRING',desc:'URL relativa de la landing page'},
+    {name:'utm_source',type:'STRING',desc:'Fuente de tráfico (utm_source)'},
+    {name:'utm_campaign',type:'STRING',desc:'Campaña de tráfico (utm_campaign)'},
+    {name:'sessions',type:'INTEGER',desc:'Sesiones web en la landing'},
+    {name:'whatsapp_clicks',type:'INTEGER',desc:'Clics en el botón de WhatsApp'},
+    {name:'conversations_started',type:'INTEGER',desc:'Conversaciones de WhatsApp iniciadas'},
+    {name:'sales',type:'INTEGER',desc:'Ventas generadas'},
+    {name:'conversion_rate',type:'FLOAT',desc:'Conversaciones iniciadas / sesiones (%)'},
+  ]},
+  {id:'meta_ads',icon:'📘',desc:'Anuncios Click to WA de Meta (Facebook/Instagram) con métricas agregadas por anuncio',data:()=>DB.meta_ads,fields:[
+    {name:'ad_id',type:'STRING',desc:'Identificador único del anuncio'},
+    {name:'ad_name',type:'STRING',desc:'Nombre del creativo del anuncio'},
+    {name:'audience_id',type:'STRING',desc:'ID del conjunto de anuncios / audiencia'},
+    {name:'audience_name',type:'STRING',desc:'Nombre de la audiencia segmentada'},
+    {name:'campaign_id',type:'STRING',desc:'ID de la campaña en Meta Ads'},
+    {name:'campaign_name',type:'STRING',desc:'Nombre de la campaña'},
+    {name:'account_id',type:'STRING',desc:'ID de la cuenta publicitaria'},
+    {name:'account_name',type:'STRING',desc:'Nombre de la cuenta publicitaria'},
+    {name:'wa_link',type:'STRING',desc:'URL de click to WA generada por el anuncio'},
+    {name:'fecha_inicio',type:'DATE',desc:'Fecha de inicio del anuncio'},
+    {name:'importe_gastado',type:'FLOAT',desc:'Gasto total en USD del anuncio en el período'},
+    {name:'conversaciones',type:'INTEGER',desc:'Conversaciones de WhatsApp iniciadas desde el anuncio'},
+    {name:'asignadas',type:'INTEGER',desc:'Conversaciones asignadas a un agente'},
+    {name:'ventas',type:'INTEGER',desc:'Ventas generadas atribuidas al anuncio'},
+  ]},
+  {id:'contact_custom_fields',icon:'🗂️',desc:'Valores de campos personalizados por contacto (modelo EAV)',data:()=>DB.contact_custom_fields,fields:[
+    {name:'field_id',type:'STRING',desc:'Identificador único del registro'},
+    {name:'contact_id',type:'STRING',desc:'FK a contacts'},
+    {name:'field_name',type:'STRING',desc:'Nombre del campo personalizado (empresa, cargo, presupuesto_usd, etc.)'},
+    {name:'field_value',type:'STRING',desc:'Valor del campo como texto'},
+    {name:'field_type',type:'STRING',desc:'Tipo declarado del valor: text, number, date, boolean'},
+  ]},
+];
+
+// ── NAVIGATION ─────────────────────────────────────────────────
+function goTo(id,btn,group,name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('nav-group-name').textContent=group;
+  document.getElementById('nav-page-name').textContent=name;
+  const showPeriod=['general','pauta'].includes(id);
+  document.getElementById('period-badge').style.display=showPeriod?'':'none';
+  if(id==='general')setTimeout(render,50);
+  if(id==='pauta')setTimeout(renderPauta,50);
+  if(id==='contactos')setTimeout(renderContactos,50);
+  if(id==='config')setTimeout(renderConfigPage,50);
+  if(id==='tables')setTimeout(renderTables,50);
+}
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');btn.classList.add('active');
+}
+function showStab(id,btn){
+  const page=btn.closest('.page');
+  page.querySelectorAll('.stab-panel').forEach(p=>p.classList.remove('active'));
+  page.querySelectorAll('.stab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');btn.classList.add('active');
+}
+const PAUTA_TAB_INFO={
+  'stab-meta':{title:'Click to WA · Meta',desc:'Performance de conversaciones iniciadas desde anuncios de Facebook e Instagram · trazabilidad desde el clic hasta la venta'},
+  'stab-google':{title:'Click to WA · Google',desc:'Performance de conversaciones iniciadas desde Google Ads con botón de WhatsApp · costo e impacto por campaña'},
+  'stab-web':{title:'Tráfico web',desc:'Conversaciones iniciadas desde landings y sitio web · sesiones, tasa de contacto y conversión por página'}
+};
+function goToPautaTab(tabId,navBtn,group,name){
+  goTo('pauta',navBtn,group,name);
+  setTimeout(()=>{
+    const tabBtn=document.querySelector(`[onclick*="showStab('${tabId}'"]`);
+    if(tabBtn) showStab(tabId,tabBtn);
+    if(tabId==='stab-meta') renderMetaCtwa();
+    const info=PAUTA_TAB_INFO[tabId];
+    if(info){
+      document.getElementById('pauta-title').textContent=info.title;
+      document.getElementById('pauta-desc').textContent=info.desc;
+      const ph=document.getElementById('pauta-search-placeholder');
+      if(ph) ph.placeholder='Pregunta lo que quieras sobre '+info.title.toLowerCase()+'...';
+    }
+  },80);
+}
+
+// ── AI CHAT ────────────────────────────────────────────────────
+function toggleChat(){
+  document.getElementById('chat-panel').classList.toggle('open');
+  document.getElementById('chat-overlay').classList.toggle('open');
+  if(document.getElementById('chat-panel').classList.contains('open'))
+    setTimeout(()=>document.getElementById('chat-input').focus(),300);
+}
+function toggleDocPanel(id){
+  document.getElementById(id+'-panel').classList.toggle('open');
+  document.getElementById(id+'-overlay').classList.toggle('open');
+}
+function toggleDoc(){toggleDocPanel('doc');}
+function sendFromSearch(inputId){
+  const inp=document.getElementById(inputId||'ai-search-input');
+  const q=inp.value.trim();
+  if(!q) return;
+  inp.value='';
+  document.getElementById('chat-panel').classList.add('open');
+  document.getElementById('chat-overlay').classList.add('open');
+  document.getElementById('chat-input').value=q;
+  sendChat();
+}
+function askSuggestion(btn){
+  document.getElementById('chat-input').value=btn.textContent;
+  sendChat();
+}
+function sendChat(){
+  const input=document.getElementById('chat-input');
+  const q=input.value.trim();
+  if(!q) return;
+  input.value='';
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML+=`<div class="chat-msg chat-msg-user"><div class="chat-bubble">${q}</div></div>`;
+  const typingId='typing-'+Date.now();
+  msgs.innerHTML+=`<div class="chat-msg chat-msg-ai" id="${typingId}"><div class="chat-typing"><span></span><span></span><span></span></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  setTimeout(()=>{
+    const answer=getChatAnswer(q.toLowerCase());
+    document.getElementById(typingId).innerHTML=`<div class="chat-bubble">${answer}</div>`;
+    msgs.scrollTop=msgs.scrollHeight;
+  },900+Math.random()*600);
+}
+function getChatAnswer(q){
+  const totalConvs=DATA.length;
+  const ventas=DATA.filter(d=>d.isSale).length;
+  const convRate=totalConvs?Math.round(ventas/totalConvs*100):0;
+  const escaladas=DATA.filter(d=>d.escalado).length;
+  const asigPct=totalConvs?Math.round(escaladas/totalConvs*100):0;
+  const noEscPct=100-asigPct;
+  const metaConvs=DB.meta_ads.reduce((a,r)=>a+r.conversaciones,0);
+  const metaSpend=DB.meta_ads.reduce((a,r)=>a+r.importe_gastado,0);
+  const metaVentas=DB.meta_ads.reduce((a,r)=>a+r.ventas,0);
+  const topCamp=[...new Set(DB.meta_ads.map(r=>r.campaign_name))].map(c=>({
+    name:c,
+    convs:DB.meta_ads.filter(r=>r.campaign_name===c).reduce((a,r)=>a+r.conversaciones,0),
+    ventas:DB.meta_ads.filter(r=>r.campaign_name===c).reduce((a,r)=>a+r.ventas,0)
+  })).sort((a,b)=>(b.convs?b.ventas/b.convs:0)-(a.convs?a.ventas/a.convs:0))[0];
+  const topBot=BOTS.map(b=>({name:b,count:DATA.filter(d=>d.bot===b).length})).sort((a,b)=>b.count-a.count)[0];
+  const topGrupo=GRUPOS.map(g=>({name:g,ventas:DATA.filter(d=>d.grupo===g&&d.isSale).length})).sort((a,b)=>b.ventas-a.ventas)[0];
+  const slaOk=DATA.filter(d=>withinSLA(d)===true).length;
+  const slaTot=DATA.filter(d=>withinSLA(d)!==null).length;
+  const slaRate=slaTot?Math.round(slaOk/slaTot*100):0;
+  const nuevos=Math.round(totalConvs*.4);
+
+  if(/venta|convirt|cerr/.test(q))
+    return `En mayo hubo <strong>${ventas} ventas</strong> sobre ${totalConvs} conversaciones — tasa de conversión del <strong>${convRate}%</strong>. ${ventas>20?'Buen resultado para el período 💪':'Hay margen para mejorar con seguimiento más activo.'}`;
+  if(/campaña|camp/.test(q))
+    return `La campaña Meta con mejor conversión es <strong>"${topCamp?.name}"</strong>: ${topCamp?.ventas} ventas de ${topCamp?.convs} conversaciones (${topCamp?.convs?Math.round(topCamp.ventas/topCamp.convs*100):0}%). Considerá aumentar presupuesto ahí.`;
+  if(/asign|asesor|agente|equipo|grupo/.test(q))
+    return `Se escalaron <strong>${escaladas} conversaciones</strong> (${asigPct}% del total). El grupo con más ventas es <strong>"${topGrupo?.name}"</strong> con ${topGrupo?.ventas} cierres este mes.`;
+  if(/flujo|bot|automat/.test(q))
+    return `El flujo con mayor volumen es <strong>"${topBot?.name}"</strong> con ${topBot?.count} conversaciones. Los bots resuelven sin escalar el <strong>${noEscPct}%</strong> de los contactos.`;
+  if(/meta|facebook|instagram|pauta|inbound/.test(q))
+    return `En Meta Ads se invirtieron <strong>${fmtUSD(metaSpend)}</strong> generando ${metaConvs} conversaciones y ${metaVentas} ventas. Costo por venta: <strong>${fmtUSD2(metaVentas?metaSpend/metaVentas:0)}</strong>.`;
+  if(/contact|nuevo|base/.test(q))
+    return `La base activa tiene <strong>${DB.contacts.length} contactos</strong>. En el período ingresaron aproximadamente <strong>${nuevos} contactos nuevos</strong> (${Math.round(nuevos/DB.contacts.length*100)}% de la base).`;
+  if(/sla|respuesta|tiempo/.test(q))
+    return `<strong>${slaOk} conversaciones</strong> cumplieron el SLA de primera respuesta (objetivo: ${CONFIG.sla_target_min} min). Tasa de cumplimiento: <strong>${slaRate}%</strong>.`;
+  if(/hola|hi|buenas|help|ayuda/.test(q))
+    return `¡Hola! Puedo responder sobre <strong>ventas, conversaciones, campañas, asesores, flujos y pauta</strong>. ¿Qué necesitás saber?`;
+  return `No encontré datos específicos para esa consulta. Probá preguntando sobre <strong>ventas, campañas, asesores, flujos</strong> o <strong>pauta inbound</strong>.`;
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+const pct=(a,b)=>b===0?'—':Math.round(a/b*100)+'%';
+const avg=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):0;
+const fmtSecs=s=>!s?'—':s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s';
+const fmtUSD=v=>'$'+v.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtUSD2=v=>'$'+v.toFixed(2);
+const COLORS=['#E8590C','#2E7D32','#1565C0','#6A1B9A','#E65100'];
+const BADGE_MAP={'inbound organico':'b-org','click to wa':'b-ctwa','campañas':'b-camp','webhooks':'b-hook','plantillas individuales':'b-tmpl'};
+const charts={};
+const dc=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+
+// ── REPORT RENDER ──────────────────────────────────────────────
+function applyFilters(){
+  const {curr,prev}=getPeriodSlice(currentPeriodDays);
+  const o=document.getElementById('f-origen').value,b=document.getElementById('f-bot').value,
+    g=document.getElementById('f-grupo').value,t=document.getElementById('f-tipif').value,
+    e=document.getElementById('f-etapa').value;
+  const filt=d=>(!o||d.origen===o)&&(!b||d.bot===b)&&(!g||d.grupo===g)&&(!t||d.agentTipif===t)&&(!e||d.maxStage===e);
+  filtered=curr.filter(filt);
+  prevFiltered=prev.filter(filt);
+  updatePeriodLabels();
+  render();
+}
+function resetFilters(){
+  ['f-origen','f-bot','f-grupo','f-tipif','f-etapa'].forEach(id=>document.getElementById(id).value='');
+  const {curr,prev}=getPeriodSlice(currentPeriodDays);
+  filtered=[...curr];prevFiltered=[...prev];
+  updatePeriodLabels();render();
+}
+
+function renderKPIs(){
+  const f=filtered,p=prevFiltered,total=f.length,prevTotal=p.length;
+  const esc=f.filter(d=>d.escalado).length,prevEsc=p.filter(d=>d.escalado).length;
+  const ventas=f.filter(d=>isConversion(d)).length,prevVentas=p.filter(d=>isConversion(d)).length;
+  const escArr=f.filter(d=>d.escalado),prevEscArr=p.filter(d=>d.escalado);
+  const slaOk=escArr.filter(d=>withinSLA(d)===true).length;
+  const prevSlaOk=prevEscArr.filter(d=>withinSLA(d)===true).length;
+  const slaRate=escArr.length?Math.round(slaOk/escArr.length*100):0;
+  const prevSlaRate=prevEscArr.length?Math.round(prevSlaOk/prevEscArr.length*100):0;
+  const convRate=total?Math.round(ventas/total*100):0,prevConvRate=prevTotal?Math.round(prevVentas/prevTotal*100):0;
+  const avgResp=avg(f.filter(d=>d.respSecs).map(d=>d.respSecs));
+  const hasPrev=p.length>0;
+  const periodLabel=getPeriodSlice(currentPeriodDays).prevLabel;
+  const kpis=[
+    {label:'Conversaciones',tip:'Total de conversaciones de WhatsApp iniciadas en el período seleccionado, independientemente del canal o resultado.',val:total.toLocaleString(),delta:total-prevTotal,sfx:'',g:false},
+    {label:'Escaladas a agente',tip:'Conversaciones que pasaron del flujo automatizado a ser atendidas por un agente humano. Incluye derivaciones manuales y automáticas.',val:esc+' ('+pct(esc,total)+')',delta:esc-prevEsc,sfx:'',g:false},
+    {label:'Ventas cerradas',tip:'Conversaciones que resultaron en una conversión según la métrica configurada (tipificación o etapa). Configurable en ⚙ Configuración.',val:ventas+' ('+pct(ventas,total)+')',delta:ventas-prevVentas,sfx:'',g:true},
+    {label:'Tasa de conversión',tip:'Porcentaje de conversaciones que resultaron en venta sobre el total. Fórmula: ventas / total × 100.',val:convRate+'%',delta:convRate-prevConvRate,sfx:'pp',g:true},
+    {label:'Cumplimiento SLA',tip:'Porcentaje de conversaciones escaladas donde el agente respondió dentro del tiempo objetivo configurado. Configurable en ⚙ Configuración.',val:slaRate+'%',delta:slaRate-prevSlaRate,sfx:'pp',g:true},
+    {label:'Resp. prom. agente',tip:'Tiempo promedio entre la asignación de la conversación a un agente y su primera respuesta. Aplica solo a conversaciones escaladas.',val:fmtSecs(avgResp),delta:null,sfx:'',g:false},
+  ];
+  document.getElementById('kpi-grid').innerHTML=kpis.map((k,i)=>{
+    const dSign=k.delta>=0?'↑':'↓';
+    const dCls=k.g?(k.delta>=0?'du':'dd'):(k.delta<=0?'du':'dd');
+    const dEl=k.delta!==null&&hasPrev
+      ?`<div class="kpi-delta ${dCls}">${dSign} ${k.delta>0?'+':''}${k.delta}${k.sfx} vs ${periodLabel}</div>`
+      :`<div class="kpi-delta dn">${hasPrev?'período actual':'sin datos previos'}</div>`;
+    return`<div class="kpi-card${k.g?' g':''}" style="animation-delay:${i*.04}s">
+      <div class="kpi-label">${k.label}<span class="kpi-tip"><span class="kpi-tip-icon">?</span><div class="kpi-tip-box">${k.tip}</div></span></div>
+      <div class="kpi-value">${k.val}</div>${dEl}</div>`;
+  }).join('');
+}
+function renderDaily(){
+  dc('daily');
+  const days=Array.from({length:31},(_,i)=>i+1);
+  charts['daily']=new Chart(document.getElementById('chart-daily'),{
+    data:{
+      labels:days.map(String),
+      datasets:[
+        {type:'bar',label:'Conversaciones iniciadas',data:days.map(d=>filtered.filter(r=>r.fecha.getDate()===d).length),backgroundColor:'rgba(232,89,12,0.75)',borderRadius:3,borderWidth:0},
+        {type:'line',label:'Ventas',data:days.map(d=>filtered.filter(r=>r.fecha.getDate()===d&&isConversion(r)).length),borderColor:'#2E7D32',backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:'#2E7D32',borderWidth:2}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{ticks:{font:{size:11},maxTicksLimit:16},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+}
+function renderFunnel(){
+  const tot=filtered.length||1;
+  const stages=[
+    {label:'Awareness',val:filtered.length},
+    {label:'Lead',val:Math.round(filtered.length*.85)},
+    {label:'MQL',val:filtered.filter(d=>d.botTipif).length},
+    {label:'SQL',val:filtered.filter(d=>d.escalado).length},
+    {label:'Atendido',val:filtered.filter(d=>d.agentTipif).length},
+    {label:'Venta',val:filtered.filter(d=>isConversion(d)).length},
+  ];
+  const colors=['#E8590C','#EA6D25','#EC803E','#EE9358','#F0A672','#2E7D32'];
+  const max=stages[0].val||1;
+  document.getElementById('funnel-html').innerHTML=stages.map((s,i)=>{
+    const prev=i>0?stages[i-1].val:null;
+    const drop=prev?Math.round((s.val-prev)/prev*100):null;
+    const pctOfTot=Math.round(s.val/tot*100);
+    const w=Math.max(Math.round(s.val/max*100),8);
+    return`<div class="fh-row">
+      <div class="fh-label">${s.label}</div>
+      <div class="fh-bar-outer">
+        <div class="fh-bar" style="width:${w}%;background:${colors[i]}">
+          <span class="fh-bar-val">${s.val.toLocaleString()}</span>
+          <span class="fh-bar-pct">(${pctOfTot}%)</span>
+        </div>
+        ${drop!==null?`<span class="fh-drop">▼ ${Math.abs(drop)}%</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderOrigen(){
+  dc('origen');const counts=ORIGENES.map(o=>filtered.filter(d=>d.origen===o).length);
+  document.getElementById('leg-origen').innerHTML=ORIGENES.map((o,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${COLORS[i]}"></span>${o.replace('inbound organico','inb. org.').replace('plantillas individuales','plantillas')} (${counts[i]})</div>`).join('');
+  charts['origen']=new Chart(document.getElementById('chart-origen'),{type:'doughnut',data:{labels:ORIGENES,datasets:[{data:counts,backgroundColor:COLORS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/filtered.length*100)}%)`}}},cutout:'62%'}});
+}
+function renderSLA(){
+  dc('sla');
+  const target=CONFIG.sla_target_min;
+  document.getElementById('sla-subtitle').textContent=`Objetivo < ${target} min · agentes humanos`;
+  const esc=filtered.filter(d=>d.escalado);
+  const ok=esc.filter(d=>withinSLA(d)===true).length;
+  const fail=esc.filter(d=>withinSLA(d)===false).length;
+  const tot=ok+fail;
+  charts['sla']=new Chart(document.getElementById('chart-sla'),{type:'doughnut',data:{labels:[`≤ ${target} min`,`> ${target} min`],datasets:[{data:[ok,fail],backgroundColor:['#2E7D32','#E57373'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/(tot||1)*100)}%)`}}},cutout:'60%'}});
+  document.getElementById('leg-sla').innerHTML=`<div class="leg-item"><span class="leg-dot" style="background:#2E7D32"></span>OK: ${ok} (${Math.round(ok/(tot||1)*100)}%)</div><div class="leg-item"><span class="leg-dot" style="background:#E57373"></span>Fallo: ${fail}</div>`;
+}
+function renderTipif(){
+  dc('tipif');
+  const sorted=AGENT_TIPIFS.map(t=>({t,v:filtered.filter(d=>d.agentTipif===t).length})).sort((a,b)=>b.v-a.v);
+  charts['tipif']=new Chart(document.getElementById('chart-tipif'),{type:'bar',data:{labels:sorted.map(c=>c.t+' (de agente)'),datasets:[{data:sorted.map(c=>c.v),backgroundColor:sorted.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} (${Math.round(ctx.raw/(filtered.length||1)*100)}%)`}}},scales:{x:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}});
+}
+function renderConvOrigen(){
+  dc('conv-origen');
+  const _pc=CONFIG.conversions[0]||{type:'typification',values:[]};
+  const label=_pc.type==='cita'?'Cita agendada':_pc.type==='typification'?`Tipif: ${_pc.values.join(', ')}`:`Etapa: ${_pc.values.join(', ')}`;
+  document.getElementById('conv-subtitle').textContent=`Tasa de conversión por origen · ${label}`;
+  charts['conv-origen']=new Chart(document.getElementById('chart-conv-origen'),{type:'bar',data:{labels:ORIGENES.map(o=>o.replace('inbound organico','inb. org.').replace('plantillas individuales','plantillas')),datasets:[{data:ORIGENES.map(o=>{const r=filtered.filter(d=>d.origen===o);return r.length?Math.round(r.filter(d=>isConversion(d)).length/r.length*100):0;}),backgroundColor:COLORS,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'% conversión'}}},scales:{x:{ticks:{font:{size:10},maxRotation:15},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:11},callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+}
+function renderTableOrigen(){
+  const grand=filtered.length||1;
+  document.getElementById('tbody-origen').innerHTML=ORIGENES.map(o=>{
+    const rows=filtered.filter(d=>d.origen===o),total=rows.length;
+    const esc=rows.filter(d=>d.escalado).length;
+    const slaOk=rows.filter(d=>withinSLA(d)===true).length;
+    const ventas=rows.filter(d=>isConversion(d)).length;
+    const dir=['campañas','plantillas individuales'].includes(o)?'outbound':'inbound';
+    const slaRate=esc?Math.round(slaOk/esc*100):null;
+    return`<tr><td><span class="badge ${BADGE_MAP[o]||''}">${o}</span></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td><span class="badge ${dir==='outbound'?'b-camp':'b-org'}">${dir}</span></td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="${slaRate!==null?(slaRate>=70?'ok':'fail'):''}">${slaRate!==null?slaRate+'%':'—'}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
+  }).join('');
+}
+function renderTableBot(){
+  const grand=filtered.length||1;
+  document.getElementById('tbody-bot').innerHTML=BOTS.map(b=>{
+    const rows=filtered.filter(d=>d.bot===b),total=rows.length;
+    const avgStage=avg(rows.map(d=>parseInt(d.maxStage.replace('stage_',''))||1));
+    const tipifCounts={};rows.forEach(d=>{if(d.botTipif)tipifCounts[d.botTipif]=(tipifCounts[d.botTipif]||0)+1;});
+    const top=Object.entries(tipifCounts).sort((a,b)=>b[1]-a[1])[0];
+    const esc=rows.filter(d=>d.escalado).length,ventas=rows.filter(d=>isConversion(d)).length;
+    return`<tr><td><strong>${b}</strong></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td class="mono">stage_${avgStage}</td><td>${top?`<span class="badge b-org">${top[0]}</span> <span style="color:var(--gray-500);font-size:10px">(${top[1]})</span>`:'—'}</td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
+  }).join('');
+}
+function renderTableGrupo(){
+  const grand=filtered.length||1;
+  document.getElementById('tbody-grupo').innerHTML=GRUPOS.map(g=>{
+    const rows=filtered.filter(d=>d.grupo===g),total=rows.length;
+    const slaOk=rows.filter(d=>withinSLA(d)===true).length,ventas=rows.filter(d=>isConversion(d)).length;
+    const slaRate=total?Math.round(slaOk/total*100):null;
+    const avgResp=avg(rows.filter(d=>d.respSecs).map(d=>d.respSecs));
+    const tipifCounts={};rows.forEach(d=>{if(d.agentTipif)tipifCounts[d.agentTipif]=(tipifCounts[d.agentTipif]||0)+1;});
+    const top=Object.entries(tipifCounts).sort((a,b)=>b[1]-a[1])[0];
+    return`<tr><td><strong>${g}</strong></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td class="mono">${slaOk}</td><td class="${slaRate!==null?(slaRate>=70?'ok':'fail'):''}">${slaRate!==null?slaRate+'%':'—'}</td><td class="mono">${fmtSecs(avgResp)}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td><td>${top?`<span class="badge b-ctwa">${top[0]}</span>`:'—'}</td></tr>`;
+  }).join('');
+}
+function render(){renderKPIs();renderDaily();renderFunnel();renderTipif();renderTableOrigen();renderTableBot();renderTableGrupo();}
+
+// ── PAUTA ──────────────────────────────────────────────────────
+const PAUTA_DATA={
+  meta:{invertido:4200,convs:312,ventas:56,color:'#1565C0',hist:[28,31,24,35,38,29,33,40,27,36,41,32,30,38,35,42,29,33,38,41,36,28,44,39,35,42,38,33,40,36,37]},
+  google:{invertido:2800,convs:198,ventas:29,color:'#2E7D32',hist:[18,21,16,23,25,19,22,26,18,24,27,21,20,25,23,28,19,22,25,27,24,18,29,26,23,28,25,22,26,24,25]},
+  web:{invertido:1100,convs:87,ventas:11,color:'#E8590C',hist:[7,8,6,9,10,7,8,10,7,9,11,8,7,9,8,11,7,8,9,10,9,7,11,10,8,10,9,8,10,9,9]}
+};
+const DAYS31=Array.from({length:31},(_,i)=>i+1);
+function renderPauta(){
+  const canales=['meta','google','web'];
+  const d={};
+  canales.forEach(c=>{const pd=PAUTA_DATA[c];d[c]={invertido:pd.invertido,convs:pd.convs,cpc:pd.convs>0?pd.invertido/pd.convs:0,ventas:pd.ventas,tasa:pd.convs>0?pd.ventas/pd.convs*100:0,cpv:pd.ventas>0?pd.invertido/pd.ventas:0};});
+  const metrics=['invertido','convs','cpc','ventas','tasa','cpv'];
+  const lowerBetter=['cpc','cpv'];
+  const ranks={};
+  metrics.forEach(m=>{const vals=canales.map(c=>d[c][m]);const sorted=[...vals].sort((a,b)=>lowerBetter.includes(m)?a-b:b-a);ranks[m]=vals.map(v=>sorted.indexOf(v)+1);});
+  const fmtVal=(m,v)=>{if(m==='invertido')return fmtUSD(v);if(m==='convs'||m==='ventas')return v.toLocaleString();if(m==='cpc'||m==='cpv')return fmtUSD2(v);if(m==='tasa')return v.toFixed(1)+'%';return v;};
+  const metricLabels={invertido:'Importe invertido',convs:'Convs. generadas',cpc:'Costo por conv.',ventas:'Ventas obtenidas',tasa:'Tasa de ventas',cpv:'Costo por venta'};
+  canales.forEach((c,ci)=>{
+    document.getElementById('metrics-'+c).innerHTML=metrics.map((m,mi)=>{
+      const rank=ranks[m][ci];
+      const rankBadge=rank===1?`<span class="rank-badge rank-1">● mejor</span>`:rank===3?`<span class="rank-badge rank-3">● peor</span>`:'';
+      const cls=rank===1?'best':rank===3?'worst':'';
+      return`<div class="pauta-metric-row"><div class="pm-label">${metricLabels[m]}${rankBadge}</div><div class="pm-value ${cls}">${fmtVal(m,d[c][m])}</div></div>`;
+    }).join('');
+  });
+  dc('pauta-conv');dc('pauta-cpc');dc('pauta-ventas');dc('pauta-cpv');
+  const canalNames=['Meta','Google','Web'];
+  const canalColors=['#1565C0','#2E7D32','#E8590C'];
+  charts['pauta-conv']=new Chart(document.getElementById('chart-pauta-conv'),{type:'line',data:{labels:DAYS31.map(String),datasets:canales.map((c,i)=>({label:canalNames[i],data:PAUTA_DATA[c].hist,borderColor:canalColors[i],backgroundColor:'transparent',tension:.4,pointRadius:2,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:16},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  charts['pauta-cpc']=new Chart(document.getElementById('chart-pauta-cpc'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>parseFloat(d[c].cpc.toFixed(2))),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtUSD2(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  charts['pauta-ventas']=new Chart(document.getElementById('chart-pauta-ventas'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>d[c].ventas),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  charts['pauta-cpv']=new Chart(document.getElementById('chart-pauta-cpv'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>parseFloat(d[c].cpv.toFixed(2))),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtUSD2(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+}
+
+// ── CLICK TO WA META ──────────────────────────────────────────
+let metaPeriodDays=30;
+function setMetaPeriod(d,btn){
+  metaPeriodDays=d;
+  btn.closest('.filter-bar').querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMetaCtwa();
+}
+function resetMetaFilters(){
+  document.getElementById('mf-cuenta').value='';
+  document.getElementById('mf-camp').value='';
+  renderMetaCtwa();
+}
+function renderMetaCtwa(){
+  // Populate selects on first render
+  const cuentaSel=document.getElementById('mf-cuenta');
+  const campSel=document.getElementById('mf-camp');
+  if(cuentaSel.options.length<=1){
+    [...new Set(DB.meta_ads.map(r=>r.account_name))].forEach(n=>{
+      const o=document.createElement('option');o.value=n;o.textContent=n;cuentaSel.appendChild(o);
+    });
+  }
+  if(campSel.options.length<=1){
+    [...new Set(DB.meta_ads.map(r=>r.campaign_name))].forEach(n=>{
+      const o=document.createElement('option');o.value=n;o.textContent=n;campSel.appendChild(o);
+    });
+  }
+
+  const cuentaFilt=cuentaSel.value;
+  const campFilt=campSel.value;
+
+  // Period scale factor (fake — no daily data per ad)
+  const scale=metaPeriodDays===7?7/30:metaPeriodDays===90?90/30:1;
+  const prevLabel=metaPeriodDays===7?'semana anterior':metaPeriodDays===90?'trim. anterior':'mes anterior';
+
+  let ads=DB.meta_ads.filter(r=>
+    (!cuentaFilt||r.account_name===cuentaFilt)&&
+    (!campFilt||r.campaign_name===campFilt)
+  );
+
+  const sc=v=>Math.round(v*scale);
+  const totalConvs=ads.reduce((a,r)=>a+sc(r.conversaciones),0);
+  const totalSpend=ads.reduce((a,r)=>a+sc(r.importe_gastado),0);
+  const totalAsig=ads.reduce((a,r)=>a+sc(r.asignadas),0);
+  const totalVentas=ads.reduce((a,r)=>a+sc(r.ventas),0);
+  const prevConvs=ads.reduce((a,r)=>a+sc(r.prev_conversaciones),0);
+  const prevSpend=ads.reduce((a,r)=>a+sc(r.prev_importe_gastado),0);
+  const prevAsig=ads.reduce((a,r)=>a+sc(r.prev_asignadas),0);
+  const prevVentas=ads.reduce((a,r)=>a+sc(r.prev_ventas),0);
+  const uniqCuentas=new Set(ads.map(r=>r.account_id)).size;
+  const uniqCamps=new Set(ads.map(r=>r.campaign_id)).size;
+  const cpc=totalConvs>0?totalSpend/totalConvs:0;
+  const cpv=totalVentas>0?totalSpend/totalVentas:0;
+  const prevCpc=prevConvs>0?prevSpend/prevConvs:0;
+  const prevCpv=prevVentas>0?prevSpend/prevVentas:0;
+
+  // KPIs with delta
+  const kpis=[
+    {label:'Cuentas vinculadas',val:uniqCuentas,fmt:'n',delta:null,g:false},
+    {label:'Monto invertido',val:totalSpend,fmt:'usd',delta:totalSpend-prevSpend,sfx:'',g:false,lowerBetter:true},
+    {label:'Campañas',val:uniqCamps,fmt:'n',delta:null,g:false},
+    {label:'Conversaciones iniciadas',val:totalConvs,fmt:'n',delta:totalConvs-prevConvs,sfx:'',g:true},
+    {label:'Asignadas',val:`${totalAsig} (${totalConvs?Math.round(totalAsig/totalConvs*100):0}%)`,fmt:'s',delta:totalAsig-prevAsig,sfx:'',g:true},
+    {label:'Ventas',val:`${totalVentas} (${totalConvs?Math.round(totalVentas/totalConvs*100):0}%)`,fmt:'s',delta:totalVentas-prevVentas,sfx:'',g:true},
+    {label:'Costo por conv.',val:cpc,fmt:'usd2',delta:parseFloat((cpc-prevCpc).toFixed(2)),sfx:'',g:false,lowerBetter:true},
+    {label:'Costo por venta',val:cpv,fmt:'usd2',delta:parseFloat((cpv-prevCpv).toFixed(2)),sfx:'',g:false,lowerBetter:true},
+  ];
+  document.getElementById('meta-kpis').innerHTML=kpis.map((k,i)=>{
+    const fv=k.fmt==='usd'?fmtUSD(k.val):k.fmt==='usd2'?fmtUSD2(k.val):k.fmt==='s'?k.val:k.val.toLocaleString();
+    let dEl='';
+    if(k.delta!==null){
+      const up=k.delta>=0;
+      const good=k.lowerBetter?!up:up;
+      const dCls=good?'du':'dd';
+      const sign=up?'↑':'↓';
+      const dv=k.fmt==='usd'?fmtUSD(Math.abs(k.delta)):k.fmt==='usd2'?fmtUSD2(Math.abs(k.delta)):Math.abs(k.delta).toLocaleString();
+      dEl=`<div class="kpi-delta ${dCls}">${sign} ${dv}${k.sfx||''} vs ${prevLabel}</div>`;
+    }
+    return`<div class="kpi-card${k.g?' g':''}" style="animation-delay:${i*.04}s">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${fv}</div>${dEl}</div>`;
+  }).join('');
+
+  // Daily chart
+  const days=metaPeriodDays===7?7:metaPeriodDays===90?90:31;
+  const dailyConvs=Array.from({length:days},(_,i)=>{
+    const base=Math.round(totalConvs/days);
+    return Math.max(0,base+Math.round((Math.sin(i*2.3+1.1)*0.4)*base));
+  });
+  const dailySpend=Array.from({length:days},(_,i)=>{
+    const base=totalSpend/days;
+    return Math.max(0,Math.round(base+Math.sin(i*1.7+0.5)*0.35*base));
+  });
+  const prevDailyConvs=Array.from({length:days},(_,i)=>{
+    const base=Math.round(prevConvs/days);
+    return Math.max(0,base+Math.round((Math.sin(i*2.1+0.7)*0.35)*base));
+  });
+  const dayLabels=Array.from({length:days},(_,i)=>
+    metaPeriodDays===90?`S${Math.floor(i/7)+1}`:`${i+1}`
+  );
+  dc('meta-daily');
+  charts['meta-daily']=new Chart(document.getElementById('chart-meta-daily'),{
+    data:{
+      labels:dayLabels,
+      datasets:[
+        {type:'bar',label:'Conversaciones (actual)',data:dailyConvs,backgroundColor:'rgba(232,89,12,0.3)',borderColor:'rgba(232,89,12,0.7)',borderWidth:1,borderRadius:3,yAxisID:'y'},
+        {type:'line',label:'Conversaciones (anterior)',data:prevDailyConvs,borderColor:'#D1D0CC',backgroundColor:'transparent',tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,4],yAxisID:'y'},
+        {type:'line',label:'Gasto USD',data:dailySpend,borderColor:'#1565C0',backgroundColor:'transparent',tension:.4,pointRadius:2,borderWidth:2,yAxisID:'y2'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10}},tooltip:{mode:'index'}},
+      scales:{
+        x:{ticks:{font:{size:9},maxTicksLimit:16},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},
+        y2:{beginAtZero:true,position:'right',ticks:{font:{size:10},callback:v=>'$'+v},grid:{display:false}}
+      }
+    }
+  });
+
+  // Funnel — Chart.js horizontal bars
+  const fSteps=[
+    {label:'Contactos',val:totalConvs},
+    {label:'Awareness',val:Math.round(totalConvs*.58)},
+    {label:'Leads asignados',val:totalAsig},
+    {label:'MQLs',val:Math.round(totalAsig*.42)},
+    {label:'SQLs / Ventas',val:totalVentas},
+  ];
+  const fTot=fSteps[0].val||1;
+  dc('meta-funnel');
+  charts['meta-funnel']=new Chart(document.getElementById('chart-meta-funnel'),{
+    type:'bar',
+    data:{
+      labels:fSteps.map(s=>`${s.label}  ${s.val.toLocaleString()} (${Math.round(s.val/fTot*100)}%)`),
+      datasets:[{
+        data:fSteps.map(s=>s.val),
+        backgroundColor:['#E8590C','#EA6D25','#EC803E','#EE9358','#F0A672'],
+        borderWidth:0,borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw.toLocaleString()} (${Math.round(ctx.raw/fTot*100)}%)`}}},
+      scales:{
+        x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:11},color:'#444'},grid:{display:false}}
+      }
+    }
+  });
+
+  const totalConvsAll=totalConvs||1;
+
+  // Helper to build aggregated rows
+  function metaGroup(keyFn,labelFn,extraColsFn,extraHeadersFn){
+    const map={};
+    ads.forEach(r=>{
+      const k=keyFn(r);
+      if(!map[k]){map[k]={label:labelFn(r),spend:0,convs:0,asig:0,ventas:0,extra:extraColsFn(r)};}
+      map[k].spend+=sc(r.importe_gastado);
+      map[k].convs+=sc(r.conversaciones);
+      map[k].asig+=sc(r.asignadas);
+      map[k].ventas+=sc(r.ventas);
+    });
+    return Object.values(map).sort((a,b)=>b.convs-a.convs);
+  }
+  function metaTableHTML(rows,firstHeader,extraHeaders,extraCellFn){
+    const pct=(v,t)=>`<span style="color:var(--gray-400);font-size:10px">(${t?Math.round(v/t*100):0}%)</span>`;
+    return`<table><thead><tr>
+      <th>${firstHeader}</th>${extraHeaders.map(h=>`<th>${h}</th>`).join('')}
+      <th>Importe</th><th>Conversaciones</th><th>Costo / conv.</th>
+      <th>Asignadas</th><th>Asig. (%)</th><th>Ventas</th><th>Conv. (%)</th><th>Costo / venta</th>
+    </tr></thead><tbody>${rows.map(r=>`<tr>
+      <td><strong>${r.label}</strong></td>${extraCellFn(r)}
+      <td class="mono">${fmtUSD(r.spend)}</td>
+      <td class="mono">${r.convs} ${pct(r.convs,totalConvsAll)}</td>
+      <td class="mono">${fmtUSD2(r.convs?r.spend/r.convs:0)}</td>
+      <td class="mono">${r.asig} ${pct(r.asig,r.convs)}</td>
+      <td class="mono">${r.convs?Math.round(r.asig/r.convs*100):0}%</td>
+      <td class="mono${r.ventas>0?' ok':''}">${r.ventas} ${pct(r.ventas,r.convs)}</td>
+      <td class="mono${r.ventas>0?' ok':''}">${r.convs?Math.round(r.ventas/r.convs*100):0}%</td>
+      <td class="mono">${r.ventas?fmtUSD2(r.spend/r.ventas):'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+
+  // By campaign
+  const campRows=metaGroup(r=>r.campaign_id,r=>r.campaign_name,r=>({account:r.account_name,aud:0,nad:0}),()=>{});
+  // count audiences & ads per campaign
+  const campAuds={},campNads={};
+  ads.forEach(r=>{
+    if(!campAuds[r.campaign_id])campAuds[r.campaign_id]=new Set();
+    campAuds[r.campaign_id].add(r.audience_id);
+    if(!campNads[r.campaign_id])campNads[r.campaign_id]=new Set();
+    campNads[r.campaign_id].add(r.ad_id);
+  });
+  const campRowsFull=Object.entries(
+    ads.reduce((m,r)=>{
+      if(!m[r.campaign_id])m[r.campaign_id]={label:r.campaign_name,account:r.account_name,spend:0,convs:0,asig:0,ventas:0};
+      m[r.campaign_id].spend+=sc(r.importe_gastado);m[r.campaign_id].convs+=sc(r.conversaciones);
+      m[r.campaign_id].asig+=sc(r.asignadas);m[r.campaign_id].ventas+=sc(r.ventas);
+      return m;
+    },{})
+  ).map(([id,v])=>({...v,auds:(campAuds[id]||new Set()).size,nads:(campNads[id]||new Set()).size}))
+  .sort((a,b)=>b.convs-a.convs);
+  document.getElementById('meta-tab-camp').innerHTML=metaTableHTML(
+    campRowsFull,'Campaña',['Cuenta','Audiencias','Anuncios'],
+    r=>`<td>${r.account}</td><td class="mono">${r.auds}</td><td class="mono">${r.nads}</td>`
+  );
+
+  // By audience
+  const audRowsFull=Object.entries(
+    ads.reduce((m,r)=>{
+      if(!m[r.audience_id])m[r.audience_id]={label:r.audience_name,campaign:r.campaign_name,spend:0,convs:0,asig:0,ventas:0};
+      m[r.audience_id].spend+=sc(r.importe_gastado);m[r.audience_id].convs+=sc(r.conversaciones);
+      m[r.audience_id].asig+=sc(r.asignadas);m[r.audience_id].ventas+=sc(r.ventas);
+      return m;
+    },{})
+  ).map(([,v])=>v).sort((a,b)=>b.convs-a.convs);
+  document.getElementById('meta-tab-aud').innerHTML=metaTableHTML(
+    audRowsFull,'Audiencia',['Campaña'],
+    r=>`<td>${r.campaign}</td>`
+  );
+
+  // By ad
+  const adRows=[...ads].sort((a,b)=>sc(b.conversaciones)-sc(a.conversaciones)).map(r=>{
+    const cv=sc(r.conversaciones),sp=sc(r.importe_gastado),as=sc(r.asignadas),vt=sc(r.ventas);
+    return{label:r.ad_name,campaign:r.campaign_name,audience:r.audience_name,link:r.wa_link,fecha:r.fecha_inicio,spend:sp,convs:cv,asig:as,ventas:vt};
+  });
+  const pct2=(v,t)=>`<span style="color:var(--gray-400);font-size:10px">(${t?Math.round(v/t*100):0}%)</span>`;
+  document.getElementById('meta-tab-ad').innerHTML=`<table><thead><tr>
+    <th>Anuncio</th><th>Campaña</th><th>Audiencia</th><th>Link</th><th>Fecha</th>
+    <th>Importe</th><th>Conversaciones</th><th>Costo / conv.</th>
+    <th>Asignadas</th><th>Asig. (%)</th><th>Ventas</th><th>Conv. (%)</th><th>Costo / venta</th>
+  </tr></thead><tbody>${adRows.map(r=>`<tr>
+    <td><strong>${r.label}</strong></td><td>${r.campaign}</td>
+    <td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${r.audience}">${r.audience}</td>
+    <td><a href="${r.link}" target="_blank" style="color:var(--orange);font-size:10px">wa.me/…</a></td>
+    <td class="mono">${r.fecha}</td>
+    <td class="mono">${fmtUSD(r.spend)}</td>
+    <td class="mono">${r.convs} ${pct2(r.convs,totalConvsAll)}</td>
+    <td class="mono">${fmtUSD2(r.convs?r.spend/r.convs:0)}</td>
+    <td class="mono">${r.asig} ${pct2(r.asig,r.convs)}</td>
+    <td class="mono">${r.convs?Math.round(r.asig/r.convs*100):0}%</td>
+    <td class="mono${r.ventas>0?' ok':''}">${r.ventas} ${pct2(r.ventas,r.convs)}</td>
+    <td class="mono${r.ventas>0?' ok':''}">${r.convs?Math.round(r.ventas/r.convs*100):0}%</td>
+    <td class="mono">${r.ventas?fmtUSD2(r.spend/r.ventas):'—'}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function setMetaTab(tab,btn){
+  btn.closest('.card').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['camp','aud','ad'].forEach(t=>{
+    document.getElementById('meta-tab-'+t).classList.toggle('active',t===tab);
+  });
+}
+
+// ── CONFIG PAGE ────────────────────────────────────────────────
+function renderConfigPage(){
+  document.getElementById('cfg-sla').value=CONFIG.sla_target_min;
+  document.getElementById('cfg-stages-body').innerHTML=CONFIG.stages.map((s,i)=>`
+    <div class="cfg-stage-row">
+      <div class="cfg-stage-num">${i+1}</div>
+      <input type="text" class="cfg-text" id="cfg-stage-${s.id}" value="${s.name}">
+    </div>`).join('');
+  const calSel=document.getElementById('cfg-calificado');
+  calSel.innerHTML=CONFIG.stages.map(s=>`<option value="${s.id}"${s.id===CONFIG.calificado_stage?' selected':''}>${s.name}</option>`).join('');
+  renderConvMetrics();
+}
+
+let _convIdSeq=2;
+function renderConvMetrics(){
+  const list=document.getElementById('conv-metric-list');
+  if(!list) return;
+  list.innerHTML='';
+  CONFIG.conversions.forEach((c,idx)=>{
+    const row=document.createElement('div');
+    row.className='conv-metric-row';
+    row.dataset.id=c.id;
+    const isPrimary=idx===0;
+    row.innerHTML=`
+      <div class="conv-metric-top">
+        <input class="conv-metric-name" type="text" placeholder="Nombre de la métrica" value="${c.name}" data-field="name">
+        <select class="conv-metric-type" data-field="type" onchange="onConvTypeChange(this)">
+          <option value="typification"${c.type==='typification'?' selected':''}>Por tipificación</option>
+          <option value="stage"${c.type==='stage'?' selected':''}>Por etapa</option>
+          <option value="cita"${c.type==='cita'?' selected':''}>Cita agendada</option>
+        </select>
+        ${isPrimary?'<span class="conv-primary-badge">Principal</span>':''}
+        ${!isPrimary?`<button class="conv-metric-del" title="Eliminar" onclick="deleteConvMetric('${c.id}')">✕</button>`:''}
+      </div>
+      <div class="conv-metric-values" id="conv-vals-${c.id}"></div>`;
+    list.appendChild(row);
+    renderConvMetricValues(c);
+  });
+}
+function renderConvMetricValues(c){
+  const el=document.getElementById('conv-vals-'+c.id);
+  if(!el) return;
+  if(c.type==='cita'){
+    el.innerHTML=`<span class="conv-metric-hint">✓ Automático: tipificación "reagendar"</span>`;
+    return;
+  }
+  const opts=c.type==='typification'?AGENT_TIPIFS:CONFIG.stages.map(s=>s.id);
+  const labels=c.type==='typification'?AGENT_TIPIFS:CONFIG.stages.map(s=>s.name);
+  el.innerHTML=opts.map((o,i)=>{
+    const sel=c.values.includes(o);
+    return`<label class="cfg-check${sel?' sel':''}" onclick="toggleConvVal(this,'${c.id}','${o}')">
+      <input type="checkbox" style="display:none" ${sel?'checked':''} value="${o}">
+      ${labels[i]}
+    </label>`;
+  }).join('');
+}
+function onConvTypeChange(sel){
+  const row=sel.closest('.conv-metric-row');
+  const id=row.dataset.id;
+  const c=CONFIG.conversions.find(x=>x.id===id);
+  if(!c) return;
+  c.type=sel.value;
+  c.values=[];
+  renderConvMetricValues(c);
+}
+function toggleConvVal(lbl,convId,val){
+  lbl.classList.toggle('sel');
+  const cb=lbl.querySelector('input');
+  cb.checked=!cb.checked;
+  const c=CONFIG.conversions.find(x=>x.id===convId);
+  if(!c) return;
+  if(cb.checked){if(!c.values.includes(val)) c.values.push(val);}
+  else{c.values=c.values.filter(v=>v!==val);}
+}
+function addConvMetric(){
+  const id='conv_'+(_convIdSeq++);
+  CONFIG.conversions.push({id,name:'',type:'typification',values:[]});
+  renderConvMetrics();
+  const list=document.getElementById('conv-metric-list');
+  const rows=list.querySelectorAll('.conv-metric-row');
+  rows[rows.length-1].querySelector('.conv-metric-name').focus();
+}
+function deleteConvMetric(id){
+  CONFIG.conversions=CONFIG.conversions.filter(c=>c.id!==id);
+  renderConvMetrics();
+}
+function applyConfig(){
+  CONFIG.sla_target_min=parseInt(document.getElementById('cfg-sla').value)||3;
+  CONFIG.stages=CONFIG.stages.map(s=>({...s,name:document.getElementById('cfg-stage-'+s.id)?.value||s.name}));
+  CONFIG.calificado_stage=document.getElementById('cfg-calificado')?.value||'stage_2';
+  // read metric names from inputs
+  document.querySelectorAll('.conv-metric-row').forEach(row=>{
+    const id=row.dataset.id;
+    const c=CONFIG.conversions.find(x=>x.id===id);
+    if(!c) return;
+    const nameEl=row.querySelector('.conv-metric-name');
+    if(nameEl) c.name=nameEl.value||c.name;
+  });
+  if(!CONFIG.conversions.length) CONFIG.conversions=[{id:'conv_1',name:'Venta',type:'typification',values:['venta']}];
+  render();
+  const toast=document.getElementById('cfg-toast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
+}
+
+// ── TABLES PAGE ────────────────────────────────────────────────
+function renderTables(){
+  document.getElementById('tbl-list').innerHTML=SCHEMA.map(t=>`
+    <div class="tbl-card" id="tbl-${t.id}">
+      <div class="tbl-hdr" onclick="toggleTbl('${t.id}')">
+        <div class="tbl-ico">${t.icon}</div>
+        <div>
+          <div class="tbl-name">${t.id}</div>
+          <div class="tbl-desc">${t.desc}</div>
+        </div>
+        <div class="tbl-meta">
+          <span class="tbl-rows">${t.data().length} filas</span>
+          <span class="tbl-chev">›</span>
+        </div>
+      </div>
+      <div class="tbl-body">
+        <div class="tbl-inner-tabs">
+          <button class="tbl-itab active" onclick="switchTblTab(event,'${t.id}','schema')">Campos</button>
+          <button class="tbl-itab" onclick="switchTblTab(event,'${t.id}','preview')">Preview</button>
+        </div>
+        <div id="tbl-content-${t.id}">${buildSchema(t)}</div>
+      </div>
+    </div>`).join('');
+}
+function toggleTbl(id){document.getElementById('tbl-'+id).classList.toggle('open');}
+function buildSchema(t){
+  return`<div class="schema-wrap">
+    <div class="schema-header"><span>Campo</span><span>Tipo</span><span>Descripción</span></div>
+    ${t.fields.map(f=>`<div class="schema-row"><span class="f-name">${f.name}</span><span class="f-type">${f.type}</span><span class="f-desc">${f.desc}</span></div>`).join('')}
+  </div>`;
+}
+function buildPreview(t){
+  const rows=t.data().slice(0,20);
+  if(!rows.length)return'<div style="padding:16px;font-size:12px;color:var(--gray-500)">Sin datos</div>';
+  const keys=Object.keys(rows[0]);
+  return`<div class="preview-wrap"><table>
+    <thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(row=>`<tr>${keys.map(k=>{const v=row[k];return`<td class="mono">${v===null||v===undefined?'<span style="color:var(--gray-300)">null</span>':String(v)}</td>`;}).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+function switchTblTab(e,id,tab){
+  const card=document.getElementById('tbl-'+id);
+  card.querySelectorAll('.tbl-itab').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const t=SCHEMA.find(s=>s.id===id);
+  document.getElementById('tbl-content-'+id).innerHTML=tab==='schema'?buildSchema(t):buildPreview(t);
+}
+
+// ── CONTACTOS ─────────────────────────────────────────────────
+let contactPeriodDays=30;
+let activeContactField='producto_interes';
+const CCOLS=['#E8590C','#2E7D32','#1565C0','#6A1B9A','#E65100','#00838F'];
+const STAGE_COLS={'stage_1':'#E3F2FD','stage_2':'#FFF3EC','stage_3':'#E8F5E9','stage_4':'#F3E5F5'};
+const STAGE_TEXT={'stage_1':'#1565C0','stage_2':'#E8590C','stage_3':'#2E7D32','stage_4':'#6A1B9A'};
+const STAGE_LABELS={'stage_1':'Primer contacto','stage_2':'Calificado','stage_3':'Propuesta enviada','stage_4':'Cerrado'};
+
+function getContactData(days,paisFilt,stageFilt){
+  const mo05=c=>c.created_at.startsWith('2024-05');
+  const mo04=c=>c.created_at.startsWith('2024-04');
+  const day25=c=>parseInt(c.created_at.slice(8,10))>=25;
+
+  const currConvs = days===7 ? DB.conversations.filter(c=>mo05(c)&&day25(c))
+                  : days===90? DB.conversations
+                  : DB.conversations.filter(mo05);
+  const prevConvs = days===7 ? DB.conversations.filter(c=>mo04(c)&&day25(c))
+                  : days===90? []
+                  : DB.conversations.filter(mo04);
+
+  const cMap={};
+  DB.contacts.forEach(c=>cMap[c.contact_id]=c);
+
+  function buildContacts(convs){
+    const byId={};
+    convs.forEach(cv=>{
+      if(!byId[cv.contact_id]) byId[cv.contact_id]={convs:[]};
+      byId[cv.contact_id].convs.push(cv);
+    });
+    return Object.entries(byId).map(([id,{convs:cvs}])=>{
+      const info=cMap[id]||{contact_id:id,country:'MX',first_contact_at:'2024-05-10',is_returning:false};
+      const latest=cvs.sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
+      const isNew=info.first_contact_at&&info.first_contact_at.startsWith('2024-05');
+      return{...info,latestStage:latest.stage||'stage_1',latestOrigin:latest.origin,
+        isNew,convCount:cvs.length,date:latest.created_at.slice(0,10),isSale:cvs.some(c=>c.is_sale),
+        hasCita:cvs.some(c=>c.typification==='reagendar')};
+    });
+  }
+
+  let curr=buildContacts(currConvs);
+  let prev=buildContacts(prevConvs);
+
+  if(paisFilt) curr=curr.filter(c=>c.country===paisFilt);
+  if(stageFilt) curr=curr.filter(c=>c.latestStage===stageFilt);
+  return{curr,prev};
+}
+
+function renderContactos(){
+  const pais=document.getElementById('cf-pais')?.value||'';
+  const stage=document.getElementById('cf-stage')?.value||'';
+  const {curr,prev}=getContactData(contactPeriodDays,pais,stage);
+  renderCKPIs(curr,prev);
+  renderCDaily(curr);
+  renderCFields(curr);
+  renderCFieldTabs(curr);
+}
+
+function renderCKPIs(curr,prev){
+  const total=curr.length,prevTotal=prev.length;
+  const newC=curr.filter(c=>c.isNew).length,prevNew=prev.filter(c=>c.isNew).length;
+  const ret=curr.filter(c=>!c.isNew).length,prevRet=prev.filter(c=>!c.isNew).length;
+  const retRate=total?Math.round(ret/total*100):0,prevRetRate=prevTotal?Math.round(prevRet/prevTotal*100):0;
+  const avgConvs=total?parseFloat((curr.reduce((a,c)=>a+c.convCount,0)/total).toFixed(1)):0;
+  const withFields=new Set(DB.contact_custom_fields.filter(f=>curr.some(c=>c.contact_id===f.contact_id)).map(f=>f.contact_id)).size;
+  const fieldFill=total?Math.round(withFields/total*100):0;
+  const hasPrev=prev.length>0;
+  const kpis=[
+    {label:'Contactos únicos',tip:'Cantidad de contactos distintos que tuvieron al menos una conversación en el período.',val:total.toLocaleString(),delta:total-prevTotal,g:false},
+    {label:'Contactos nuevos',tip:'Contactos cuya primera interacción ocurrió dentro del período seleccionado.',val:newC+' ('+pct(newC,total)+')',delta:newC-prevNew,g:true},
+    {label:'Contactos recurrentes',tip:'Contactos que ya habían interactuado antes del período actual.',val:ret+' ('+pct(ret,total)+')',delta:ret-prevRet,g:false},
+    {label:'Convs. por contacto',tip:'Promedio de conversaciones que tuvo cada contacto único en el período.',val:avgConvs,delta:null,g:false},
+    {label:'Con campos completados',tip:'Porcentaje de contactos que tienen al menos un campo de información cargado (empresa, cargo, producto, etc.).',val:fieldFill+'%',delta:null,g:true},
+  ];
+  document.getElementById('ckpi-grid').innerHTML=kpis.map((k,i)=>{
+    const dSign=k.delta>=0?'↑':'↓';
+    const dCls=k.g?(k.delta>=0?'du':'dd'):(k.delta<=0?'du':'dd');
+    const dEl=k.delta!==null&&hasPrev
+      ?`<div class="kpi-delta ${dCls}">${dSign} ${k.delta>0?'+':''}${k.delta} vs período ant.</div>`
+      :`<div class="kpi-delta dn">período actual</div>`;
+    return`<div class="kpi-card${k.g?' g':''}" style="animation-delay:${i*.04}s">
+      <div class="kpi-label">${k.label}<span class="kpi-tip"><span class="kpi-tip-icon">?</span><div class="kpi-tip-box">${k.tip}</div></span></div>
+      <div class="kpi-value">${k.val}</div>${dEl}</div>`;
+  }).join('');
+}
+
+function renderCDaily(curr){
+  dc('c-daily');
+  const days=Array.from({length:31},(_,i)=>i+1);
+  const newByDay=days.map(d=>curr.filter(c=>c.isNew&&c.date&&parseInt(c.date.slice(8,10))===d).length);
+  const retByDay=days.map(d=>curr.filter(c=>!c.isNew&&c.date&&parseInt(c.date.slice(8,10))===d).length);
+  charts['c-daily']=new Chart(document.getElementById('chart-c-daily'),{
+    type:'bar',
+    data:{labels:days.map(String),datasets:[
+      {label:'Nuevos',data:newByDay,backgroundColor:'#E8590C',borderRadius:3,borderWidth:0},
+      {label:'Recurrentes',data:retByDay,backgroundColor:'#D1D0CC',borderRadius:3,borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},
+      scales:{x:{stacked:true,ticks:{font:{size:10},maxTicksLimit:16},grid:{display:false}},
+        y:{stacked:true,beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+}
+
+function renderCFunnel(curr){
+  const total=curr.length||1;
+  const FCOLS=['#E8590C','#EA6D25','#EC803E','#EE9358'];
+  const stages=['stage_1','stage_2','stage_3','stage_4'];
+  const stageData=stages.map((s,i)=>({label:STAGE_LABELS[s],val:curr.filter(c=>c.latestStage===s).length,color:FCOLS[i]}));
+  const maxVal=Math.max(...stageData.map(s=>s.val),1);
+  document.getElementById('c-funnel').innerHTML=stageData.map((s,i)=>{
+    const w=Math.max(14,Math.round(s.val/maxVal*100));
+    const prev=i>0?stageData[i-1].val:null;
+    const drop=prev&&prev>0?Math.round((1-s.val/prev)*100):null;
+    const connector=i<stageData.length-1?'<div class="funnel-connector"></div>':'';
+    return`<div class="funnel-step">
+      <div class="funnel-step-bar" style="width:${w}%;background:${s.color};clip-path:polygon(3% 0,97% 0,94% 100%,6% 100%)">
+        <span class="funnel-step-val">${s.label} · ${s.val}</span>
+        ${drop!==null?`<span class="funnel-step-pct">-${drop}%</span>`:''}
+      </div>
+    </div>${connector}`;
+  }).join('');
+}
+
+function renderCPais(curr){
+  dc('c-pais');
+  const countries=[...new Set(DB.contacts.map(c=>c.country))];
+  const counts=countries.map(co=>curr.filter(c=>c.country===co).length);
+  document.getElementById('leg-c-pais').innerHTML=countries.map((co,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${CCOLS[i%CCOLS.length]}"></span>${co} (${counts[i]})</div>`).join('');
+  charts['c-pais']=new Chart(document.getElementById('chart-c-pais'),{
+    type:'doughnut',data:{labels:countries,datasets:[{data:counts,backgroundColor:CCOLS,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}}},cutout:'62%'}
+  });
+}
+
+function renderCOrigen(curr){
+  dc('c-origen');
+  const origs=[...new Set(curr.map(c=>c.latestOrigin))].filter(Boolean);
+  const counts=origs.map(o=>curr.filter(c=>c.latestOrigin===o).length);
+  document.getElementById('leg-c-origen').innerHTML=origs.map((o,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${CCOLS[i%CCOLS.length]}"></span>${o} (${counts[i]})</div>`).join('');
+  charts['c-origen']=new Chart(document.getElementById('chart-c-origen'),{
+    type:'doughnut',data:{labels:origs,datasets:[{data:counts,backgroundColor:CCOLS,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}}},cutout:'62%'}
+  });
+}
+
+function renderCFields(curr){
+  dc('c-fields');
+  const contactIds=new Set(curr.map(c=>c.contact_id));
+  const fieldNames=[...new Set(DB.contact_custom_fields.map(f=>f.field_name))];
+  const pairs=fieldNames.map(fn=>{
+    const filled=new Set(DB.contact_custom_fields.filter(f=>f.field_name===fn&&contactIds.has(f.contact_id)).map(f=>f.contact_id)).size;
+    return{name:fn.replace(/_/g,' '),rate:curr.length?Math.round(filled/curr.length*100):0};
+  }).sort((a,b)=>b.rate-a.rate);
+  charts['c-fields']=new Chart(document.getElementById('chart-c-fields'),{
+    type:'bar',
+    data:{labels:pairs.map(p=>p.name),datasets:[{data:pairs.map(p=>p.rate),backgroundColor:pairs.map(p=>p.rate>=60?'#2E7D32':p.rate>=30?'#E8590C':'#D1D0CC'),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'% completado'}}},
+      scales:{x:{beginAtZero:true,max:100,ticks:{font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:11}},grid:{display:false}}}}
+  });
+}
+
+function renderCFieldTabs(curr){
+  const fieldNames=[...new Set(DB.contact_custom_fields.map(f=>f.field_name))];
+  document.getElementById('c-field-btns').innerHTML=fieldNames.map(fn=>`
+    <button class="preset-btn${fn===activeContactField?' active':''}" onclick="setContactField('${fn}',this)">${fn.replace(/_/g,' ')}</button>
+  `).join('');
+  renderCFieldTable(curr);
+}
+
+function setContactField(fn,btn){
+  activeContactField=fn;
+  btn.closest('#c-field-btns').querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const pais=document.getElementById('cf-pais')?.value||'';
+  const stage=document.getElementById('cf-stage')?.value||'';
+  const {curr}=getContactData(contactPeriodDays,pais,stage);
+  renderCFieldTable(curr);
+}
+
+function renderCFieldTable(curr){
+  const contactIds=new Set(curr.map(c=>c.contact_id));
+  const fieldRows=DB.contact_custom_fields.filter(f=>f.field_name===activeContactField&&contactIds.has(f.contact_id));
+  const values=[...new Set(fieldRows.map(f=>f.field_value))].sort();
+  const calStage=CONFIG.calificado_stage;
+  const calName=CONFIG.stages.find(s=>s.id===calStage)?.name||'Calificado';
+
+  if(!values.length){
+    document.getElementById('c-field-table').innerHTML=`<div style="padding:20px;font-size:12px;color:var(--gray-500)">Sin datos para este campo en el período.</div>`;
+    return;
+  }
+
+  const rows=values.map(val=>{
+    const contactsWithVal=new Set(fieldRows.filter(f=>f.field_value===val).map(f=>f.contact_id));
+    const inPeriod=curr.filter(c=>contactsWithVal.has(c.contact_id));
+    const total=inPeriod.length;
+    const convs=inPeriod.reduce((a,c)=>a+c.convCount,0);
+    const calificados=inPeriod.filter(c=>c.latestStage===calStage).length;
+    const citas=inPeriod.filter(c=>c.hasCita).length;
+    const sales=inPeriod.filter(c=>c.isSale).length;
+    const convRate=total?Math.round(sales/total*100):0;
+    return{val,total,convs,calificados,citas,sales,convRate};
+  }).sort((a,b)=>b.total-a.total);
+
+  const totalAll=rows.reduce((a,r)=>a+r.total,0)||1;
+
+  document.getElementById('c-field-table').innerHTML=`
+    <table>
+      <thead><tr>
+        <th>${activeContactField.replace(/_/g,' ')}</th>
+        <th>Contactos</th>
+        <th>% del total</th>
+        <th>Conversaciones</th>
+        <th>${calName}</th>
+        <th>Citas agendadas</th>
+        <th>Ventas</th>
+        <th>Conversión</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td><strong>${r.val}</strong></td>
+          <td class="mono">${r.total}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="flex:1;background:var(--gray-100);border-radius:3px;height:6px;min-width:50px">
+                <div style="width:${Math.round(r.total/totalAll*100)}%;background:var(--orange);height:6px;border-radius:3px"></div>
+              </div>
+              <span class="mono">${Math.round(r.total/totalAll*100)}%</span>
+            </div>
+          </td>
+          <td class="mono">${r.convs}</td>
+          <td class="mono">${r.calificados}</td>
+          <td class="mono">${r.citas}</td>
+          <td class="mono${r.sales>0?' ok':''}">${r.sales}</td>
+          <td class="mono${r.convRate>0?' ok':''}">${r.convRate}%</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function setContactPeriod(days,btn){
+  contactPeriodDays=days;
+  btn.closest('.filter-bar').querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderContactos();
+}
+function applyContactFilters(){renderContactos();}
+function resetContactFilters(){
+  document.getElementById('cf-pais').value='';
+  document.getElementById('cf-stage').value='';
+  renderContactos();
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+updateReportMeta();
+updatePeriodLabels();
+render();
+</script>
+</body>
+</html>
