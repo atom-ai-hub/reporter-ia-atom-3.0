@@ -35,7 +35,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--gray-50);color:var(--blac
 .ai-chat-icon{color:var(--orange);font-size:14px}
 .chat-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:200;backdrop-filter:blur(2px)}
 .chat-overlay.open{display:block}
-.chat-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:var(--white);border-left:1px solid var(--gray-200);z-index:201;display:flex;flex-direction:column;transition:right .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1)}
+.chat-panel{position:fixed;top:0;right:-540px;width:520px;height:100vh;background:var(--white);border-left:1px solid var(--gray-200);z-index:201;display:flex;flex-direction:column;transition:right .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1)}
 .chat-panel.open{right:0}
 .chat-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--gray-200);flex-shrink:0}
 .chat-header-left{display:flex;align-items:center;gap:10px}
@@ -294,22 +294,49 @@ tbody tr:hover td{background:var(--gray-50)}
 .fh-drop{font-size:10px;color:var(--gray-300);white-space:nowrap;font-family:'DM Mono',monospace}
 
 /* ── PAGE HEADER ROW ── */
-.ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
-.ph-left{flex-shrink:0}
-.ph-right{max-width:480px;text-align:right;padding-top:3px}
-.page-updated{font-size:10px;color:var(--gray-300);margin-top:4px}
+.ph-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.page-updated{font-size:11px;color:var(--gray-400)}
 .page-updated span{color:var(--gray-500);font-weight:500}
 
 /* ── AI SEARCH BAR ── */
-.ai-search-wrap{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
-.ai-search-inner{display:flex;align-items:center;flex:1;background:var(--white);border:1.5px solid var(--gray-200);border-radius:24px;padding:7px 7px 7px 20px;box-shadow:var(--shadow-md);transition:border-color .15s}
-.ai-search-inner:focus-within{border-color:var(--orange);box-shadow:0 2px 12px rgba(232,89,12,.12)}
+.ai-search-section{margin-bottom:1.5rem}
+.ai-search-wrap{display:flex;align-items:center;gap:10px}
+.ai-search-inner{display:flex;align-items:center;flex:1;background:var(--white);border:1.5px solid var(--gray-200);border-radius:24px;padding:7px 7px 7px 16px;box-shadow:var(--shadow-md);transition:border-color .15s,box-shadow .15s;gap:8px}
+.ai-search-inner:focus-within{border-color:var(--orange);box-shadow:0 2px 16px rgba(232,89,12,.15)}
+.ai-search-icon{font-size:15px;color:var(--orange);flex-shrink:0;line-height:1}
 .ai-search-input{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;background:transparent;color:var(--black)}
 .ai-search-input::placeholder{color:var(--gray-300)}
 .ai-search-submit{width:34px;height:34px;background:var(--orange);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s}
 .ai-search-submit:hover{opacity:.85}
 .ai-search-doc-btn{font-size:12px;padding:8px 16px;background:var(--black);color:var(--white);border:none;border-radius:20px;cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap;flex-shrink:0;transition:opacity .15s;letter-spacing:-.1px}
 .ai-search-doc-btn:hover{opacity:.8}
+.ai-search-hint{font-size:11px;color:var(--gray-400);margin-top:7px;padding-left:4px}
+.ai-search-hint strong{color:var(--gray-500);font-weight:500}
+
+/* ── DATE PICKER ── */
+.dp-wrap{position:relative}
+.dp-btn{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:500;color:var(--black);transition:all .15s;white-space:nowrap}
+.dp-btn:hover,.dp-btn.open{border-color:var(--orange);color:var(--orange)}
+.dp-caret{font-size:9px;color:var(--gray-400);transition:transform .15s}
+.dp-btn.open .dp-caret{transform:rotate(180deg)}
+.dp-popover{position:absolute;top:calc(100%+6px);left:0;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;display:none;min-width:380px;overflow:hidden}
+.dp-popover.open{display:flex}
+.dp-quick{width:180px;border-right:1px solid var(--gray-100);padding:6px 0;flex-shrink:0}
+.dp-quick-label{font-size:9px;font-weight:600;color:var(--gray-300);text-transform:uppercase;letter-spacing:.8px;padding:6px 14px 4px}
+.dp-quick-item{display:flex;align-items:center;padding:8px 14px;font-size:12.5px;cursor:pointer;color:var(--gray-700);transition:background .1s;gap:8px}
+.dp-quick-item:hover{background:var(--gray-50);color:var(--black)}
+.dp-quick-item.active{background:var(--orange-light);color:var(--orange);font-weight:500}
+.dp-quick-item.active::before{content:'✓';font-size:10px}
+.dp-quick-item:not(.active)::before{content:'';display:inline-block;width:10px}
+.dp-custom{flex:1;padding:14px}
+.dp-custom-label{font-size:9px;font-weight:600;color:var(--gray-300);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.dp-range{display:flex;flex-direction:column;gap:9px}
+.dp-range-row{display:flex;flex-direction:column;gap:3px}
+.dp-range-lbl{font-size:11px;color:var(--gray-500)}
+.dp-range-input{font-size:12px;padding:7px 10px;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-family:inherit;color:var(--black);outline:none;width:100%;transition:border-color .15s}
+.dp-range-input:focus{border-color:var(--orange)}
+.dp-apply{width:100%;margin-top:12px;padding:8px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;transition:opacity .15s}
+.dp-apply:hover{opacity:.9}
 
 /* ── DOC PANEL ── */
 .doc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:200;backdrop-filter:blur(2px)}
@@ -562,26 +589,44 @@ tbody tr:hover td{background:var(--gray-50)}
 <div class="page active" id="page-general">
   <div class="page-header">
     <div class="ph-row">
-      <div class="ph-left">
-        <div class="page-title">Conversaciones</div>
-        <div class="page-updated">Última actualización de datos: <span>hoy 9:30 AM</span></div>
-      </div>
-      <div class="ph-right page-desc">Seguimiento de todas las conversaciones de WhatsApp: volumen, origen, asignación a agentes, tipificaciones de cierre y cumplimiento de SLA · comparación automática con el período anterior equivalente</div>
+      <div class="page-title">Conversaciones</div>
+      <div class="page-updated">Última actualización: <span>hoy 9:30 AM</span></div>
     </div>
   </div>
-  <div class="ai-search-wrap">
-    <div class="ai-search-inner">
-      <input class="ai-search-input" id="ai-search-input" type="text" placeholder="Pregunta lo que quieras sobre conversaciones..." onkeydown="if(event.key==='Enter')sendFromSearch()">
-      <button class="ai-search-submit" onclick="sendFromSearch()">↑</button>
+  <div class="ai-search-section">
+    <div class="ai-search-wrap">
+      <div class="ai-search-inner">
+        <span class="ai-search-icon">✦</span>
+        <input class="ai-search-input" id="ai-search-input" type="text" placeholder="¿Qué querés analizar sobre las conversaciones?" onkeydown="if(event.key==='Enter')sendFromSearch()">
+        <button class="ai-search-submit" onclick="sendFromSearch()">↑</button>
+      </div>
+      <button class="ai-search-doc-btn" onclick="toggleDoc()">📖 Ver documentación</button>
     </div>
-    <button class="ai-search-doc-btn" onclick="toggleDoc()">📖 Ver documentación del reporte</button>
+    <div class="ai-search-hint">Solo puede responder sobre datos de <strong>conversaciones</strong> — no sobre otros reportes ni tablas</div>
   </div>
   <div class="filter-bar">
-    <span class="filter-label">Período</span><div class="filter-divider"></div>
-    <div class="preset-group">
-      <button class="preset-btn" onclick="setPeriod(7,this)">7d</button>
-      <button class="preset-btn active" onclick="setPeriod(30,this)">30d</button>
-      <button class="preset-btn" onclick="setPeriod(90,this)">90d</button>
+    <div class="dp-wrap">
+      <button class="dp-btn" id="dp-btn-general" onclick="toggleDP('general')">
+        <span id="dp-label-general">Últimos 30 días</span><span class="dp-caret">▼</span>
+      </button>
+      <div class="dp-popover" id="dp-popover-general">
+        <div class="dp-quick">
+          <div class="dp-quick-label">Accesos rápidos</div>
+          <div class="dp-quick-item" data-scope="general" data-days="7" onclick="selectQuickPeriod('general','Últimos 7 días',7,this)">Últimos 7 días</div>
+          <div class="dp-quick-item active" data-scope="general" data-days="30" onclick="selectQuickPeriod('general','Últimos 30 días',30,this)">Últimos 30 días</div>
+          <div class="dp-quick-item" data-scope="general" data-days="90" onclick="selectQuickPeriod('general','Últimos 90 días',90,this)">Últimos 90 días</div>
+          <div class="dp-quick-item" data-scope="general" data-days="cm" onclick="selectQuickPeriod('general','Mes actual',30,this)">Mes actual</div>
+          <div class="dp-quick-item" data-scope="general" data-days="lm" onclick="selectQuickPeriod('general','Mes anterior',30,this)">Mes anterior</div>
+        </div>
+        <div class="dp-custom">
+          <div class="dp-custom-label">Rango personalizado</div>
+          <div class="dp-range">
+            <div class="dp-range-row"><div class="dp-range-lbl">Desde</div><input class="dp-range-input" id="dp-from-general" type="date"></div>
+            <div class="dp-range-row"><div class="dp-range-lbl">Hasta</div><input class="dp-range-input" id="dp-to-general" type="date"></div>
+          </div>
+          <button class="dp-apply" onclick="applyCustomRange('general')">Aplicar rango</button>
+        </div>
+      </div>
     </div>
     <div class="filter-divider"></div>
     <span class="filter-label">Filtros</span><div class="filter-divider"></div>
@@ -593,9 +638,7 @@ tbody tr:hover td{background:var(--gray-50)}
     <button class="reset-btn" onclick="resetFilters()">Limpiar</button>
     <button class="apply-btn" onclick="applyFilters()">Aplicar</button>
   </div>
-  <div class="sh"><span class="sh-title">KPIs principales</span><div class="sh-line"></div></div>
   <div class="kpi-grid" id="kpi-grid"></div>
-  <div class="sh"><span class="sh-title">Conversaciones y ventas por día</span><div class="sh-line"></div></div>
   <div class="card" style="margin-bottom:14px">
     <div class="legend">
       <div class="leg-item"><span class="leg-dot" style="background:#E8590C"></span>Conversaciones iniciadas</div>
@@ -615,8 +658,7 @@ tbody tr:hover td{background:var(--gray-50)}
       <div style="position:relative;width:100%;height:220px"><canvas id="chart-tipif"></canvas></div>
     </div>
   </div>
-  <div class="sh" style="margin-top:1.5rem"><span class="sh-title">Performance detallado</span><div class="sh-line"></div></div>
-  <div class="card">
+  <div class="card" style="margin-top:14px">
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('tab-origen',this)">Por origen</button>
       <button class="tab-btn" onclick="showTab('tab-bot',this)">Por flujo</button>
@@ -632,26 +674,44 @@ tbody tr:hover td{background:var(--gray-50)}
 <div class="page" id="page-contactos">
   <div class="page-header">
     <div class="ph-row">
-      <div class="ph-left">
-        <div class="page-title">Contactos</div>
-        <div class="page-updated">Última actualización de datos: <span>hoy 9:30 AM</span></div>
-      </div>
-      <div class="ph-right page-desc">Universo de contactos únicos por número de WhatsApp: nuevos vs recurrentes, completitud de campos y segmentación por etapa · base de remarketing y calificación</div>
+      <div class="page-title">Contactos</div>
+      <div class="page-updated">Última actualización: <span>hoy 9:30 AM</span></div>
     </div>
   </div>
-  <div class="ai-search-wrap">
-    <div class="ai-search-inner">
-      <input class="ai-search-input" id="ai-search-contactos" type="text" placeholder="Pregunta lo que quieras sobre contactos..." onkeydown="if(event.key==='Enter')sendFromSearch('ai-search-contactos')">
-      <button class="ai-search-submit" onclick="sendFromSearch('ai-search-contactos')">↑</button>
+  <div class="ai-search-section">
+    <div class="ai-search-wrap">
+      <div class="ai-search-inner">
+        <span class="ai-search-icon">✦</span>
+        <input class="ai-search-input" id="ai-search-contactos" type="text" placeholder="¿Qué querés analizar sobre los contactos?" onkeydown="if(event.key==='Enter')sendFromSearch('ai-search-contactos')">
+        <button class="ai-search-submit" onclick="sendFromSearch('ai-search-contactos')">↑</button>
+      </div>
+      <button class="ai-search-doc-btn" onclick="toggleDocPanel('doc-contactos')">📖 Ver documentación</button>
     </div>
-    <button class="ai-search-doc-btn" onclick="toggleDocPanel('doc-contactos')">📖 Ver documentación del reporte</button>
+    <div class="ai-search-hint">Solo puede responder sobre datos de <strong>contactos</strong> — no sobre otros reportes ni tablas</div>
   </div>
   <div class="filter-bar">
-    <span class="filter-label">Período</span><div class="filter-divider"></div>
-    <div class="preset-group">
-      <button class="preset-btn" onclick="setContactPeriod(7,this)">7d</button>
-      <button class="preset-btn active" onclick="setContactPeriod(30,this)">30d</button>
-      <button class="preset-btn" onclick="setContactPeriod(90,this)">90d</button>
+    <div class="dp-wrap">
+      <button class="dp-btn" id="dp-btn-contactos" onclick="toggleDP('contactos')">
+        <span id="dp-label-contactos">Últimos 30 días</span><span class="dp-caret">▼</span>
+      </button>
+      <div class="dp-popover" id="dp-popover-contactos">
+        <div class="dp-quick">
+          <div class="dp-quick-label">Accesos rápidos</div>
+          <div class="dp-quick-item" onclick="selectQuickPeriod('contactos','Últimos 7 días',7,this)">Últimos 7 días</div>
+          <div class="dp-quick-item active" onclick="selectQuickPeriod('contactos','Últimos 30 días',30,this)">Últimos 30 días</div>
+          <div class="dp-quick-item" onclick="selectQuickPeriod('contactos','Últimos 90 días',90,this)">Últimos 90 días</div>
+          <div class="dp-quick-item" onclick="selectQuickPeriod('contactos','Mes actual',30,this)">Mes actual</div>
+          <div class="dp-quick-item" onclick="selectQuickPeriod('contactos','Mes anterior',30,this)">Mes anterior</div>
+        </div>
+        <div class="dp-custom">
+          <div class="dp-custom-label">Rango personalizado</div>
+          <div class="dp-range">
+            <div class="dp-range-row"><div class="dp-range-lbl">Desde</div><input class="dp-range-input" id="dp-from-contactos" type="date"></div>
+            <div class="dp-range-row"><div class="dp-range-lbl">Hasta</div><input class="dp-range-input" id="dp-to-contactos" type="date"></div>
+          </div>
+          <button class="dp-apply" onclick="applyCustomRange('contactos')">Aplicar rango</button>
+        </div>
+      </div>
     </div>
     <div class="filter-divider"></div>
     <span class="filter-label">Filtros</span><div class="filter-divider"></div>
@@ -660,9 +720,7 @@ tbody tr:hover td{background:var(--gray-50)}
     <button class="reset-btn" onclick="resetContactFilters()">Limpiar</button>
     <button class="apply-btn" onclick="applyContactFilters()">Aplicar</button>
   </div>
-  <div class="sh"><span class="sh-title">KPIs principales</span><div class="sh-line"></div></div>
   <div class="kpi-grid" id="ckpi-grid"></div>
-  <div class="sh"><span class="sh-title">Tendencia & distribución por etapa</span><div class="sh-line"></div></div>
   <div class="g-split">
     <div class="card">
       <div class="card-title">Contactos por día</div>
@@ -679,8 +737,7 @@ tbody tr:hover td{background:var(--gray-50)}
       <div style="position:relative;width:100%;height:220px"><canvas id="chart-c-fields"></canvas></div>
     </div>
   </div>
-  <div class="sh"><span class="sh-title">Análisis por campo de información · Remarketing</span><div class="sh-line"></div></div>
-  <div class="card">
+  <div class="card" style="margin-top:14px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
       <span style="font-size:12px;font-weight:500;color:var(--black)">Analizar campo:</span>
       <div id="c-field-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
@@ -730,19 +787,20 @@ tbody tr:hover td{background:var(--gray-50)}
 <div class="page" id="page-pauta">
   <div class="page-header">
     <div class="ph-row">
-      <div class="ph-left">
-        <div class="page-title" id="pauta-title">Click to WA · Meta</div>
-        <div class="page-updated">Última actualización de datos: <span>hoy 9:30 AM</span></div>
-      </div>
-      <div class="ph-right page-desc" id="pauta-desc">Performance de conversaciones iniciadas desde anuncios de Facebook e Instagram · trazabilidad desde el clic hasta la venta</div>
+      <div class="page-title" id="pauta-title">Click to WA · Meta</div>
+      <div class="page-updated">Última actualización: <span>hoy 9:30 AM</span></div>
     </div>
   </div>
-  <div class="ai-search-wrap">
-    <div class="ai-search-inner">
-      <input class="ai-search-input" id="pauta-search-placeholder" type="text" placeholder="Pregunta lo que quieras sobre click to wa · meta..." onkeydown="if(event.key==='Enter')sendFromSearch('pauta-search-placeholder')">
-      <button class="ai-search-submit" onclick="sendFromSearch('pauta-search-placeholder')">↑</button>
+  <div class="ai-search-section">
+    <div class="ai-search-wrap">
+      <div class="ai-search-inner">
+        <span class="ai-search-icon">✦</span>
+        <input class="ai-search-input" id="pauta-search-placeholder" type="text" placeholder="¿Qué querés analizar sobre click to WA · Meta?" onkeydown="if(event.key==='Enter')sendFromSearch('pauta-search-placeholder')">
+        <button class="ai-search-submit" onclick="sendFromSearch('pauta-search-placeholder')">↑</button>
+      </div>
+      <button class="ai-search-doc-btn" onclick="toggleDocPanel('doc-meta')">📖 Ver documentación</button>
     </div>
-    <button class="ai-search-doc-btn" onclick="toggleDocPanel('doc-meta')">📖 Ver documentación del reporte</button>
+    <div class="ai-search-hint" id="pauta-search-hint">Solo puede responder sobre datos de <strong>click to WA · Meta</strong> — no sobre otros reportes ni tablas</div>
   </div>
   <div class="subtabs">
     <button class="stab-btn active" onclick="showStab('stab-resumen',this)">Resumen de canales</button>
@@ -751,7 +809,6 @@ tbody tr:hover td{background:var(--gray-50)}
     <button class="stab-btn" onclick="showStab('stab-web',this)">🌐 Tráfico web</button>
   </div>
   <div class="stab-panel active" id="stab-resumen">
-    <div class="sh"><span class="sh-title">Comparativa de canales</span><div class="sh-line"></div><span style="font-size:10px;color:var(--gray-300);white-space:nowrap">● mejor &nbsp; ● peor</span></div>
     <div class="pauta-resumen-grid">
       <div class="pauta-canal-col"><div class="pauta-col-header"><div class="pauta-col-accent" style="background:#1565C0"></div><div><div class="pauta-col-name">📘 Click to WA · Meta</div><div class="pauta-col-sub">Facebook & Instagram Ads</div></div></div><div class="pauta-metrics" id="metrics-meta"></div></div>
       <div class="pauta-canal-col"><div class="pauta-col-header"><div class="pauta-col-accent" style="background:#2E7D32"></div><div><div class="pauta-col-name">🟢 Click to WA · Google</div><div class="pauta-col-sub">Google Ads</div></div></div><div class="pauta-metrics" id="metrics-google"></div></div>
@@ -1468,12 +1525,49 @@ function goToPautaTab(tabId,navBtn,group,name){
     const info=PAUTA_TAB_INFO[tabId];
     if(info){
       document.getElementById('pauta-title').textContent=info.title;
-      document.getElementById('pauta-desc').textContent=info.desc;
       const ph=document.getElementById('pauta-search-placeholder');
-      if(ph) ph.placeholder='Pregunta lo que quieras sobre '+info.title.toLowerCase()+'...';
+      if(ph) ph.placeholder='¿Qué querés analizar sobre '+info.title.toLowerCase()+'?';
+      const hint=document.getElementById('pauta-search-hint');
+      if(hint) hint.innerHTML='Solo puede responder sobre datos de <strong>'+info.title.toLowerCase()+'</strong> — no sobre otros reportes ni tablas';
     }
   },80);
 }
+
+// ── DATE PICKER ────────────────────────────────────────────────
+function toggleDP(scope){
+  const btn=document.getElementById('dp-btn-'+scope);
+  const pop=document.getElementById('dp-popover-'+scope);
+  const isOpen=pop.classList.contains('open');
+  document.querySelectorAll('.dp-popover').forEach(p=>p.classList.remove('open'));
+  document.querySelectorAll('.dp-btn').forEach(b=>b.classList.remove('open'));
+  if(!isOpen){pop.classList.add('open');btn.classList.add('open');}
+}
+function selectQuickPeriod(scope,label,days,el){
+  document.querySelectorAll('#dp-popover-'+scope+' .dp-quick-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('dp-label-'+scope).textContent=label;
+  document.getElementById('dp-popover-'+scope).classList.remove('open');
+  document.getElementById('dp-btn-'+scope).classList.remove('open');
+  if(scope==='general'){currentPeriodDays=days;applyFilters();}
+  else if(scope==='contactos'){contactPeriodDays=days;applyContactFilters();}
+}
+function applyCustomRange(scope){
+  const from=document.getElementById('dp-from-'+scope).value;
+  const to=document.getElementById('dp-to-'+scope).value;
+  if(!from||!to) return;
+  const fmt=s=>s.slice(5).split('-').reverse().join('/');
+  document.getElementById('dp-label-'+scope).textContent=fmt(from)+' → '+fmt(to);
+  document.getElementById('dp-popover-'+scope).classList.remove('open');
+  document.getElementById('dp-btn-'+scope).classList.remove('open');
+  if(scope==='general')applyFilters();
+  else if(scope==='contactos')applyContactFilters();
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.dp-wrap')){
+    document.querySelectorAll('.dp-popover').forEach(p=>p.classList.remove('open'));
+    document.querySelectorAll('.dp-btn').forEach(b=>b.classList.remove('open'));
+  }
+});
 
 // ── AI CHAT ────────────────────────────────────────────────────
 function toggleChat(){
@@ -1600,7 +1694,7 @@ function renderKPIs(){
   const convRate=total?Math.round(ventas/total*100):0,prevConvRate=prevTotal?Math.round(prevVentas/prevTotal*100):0;
   const avgResp=avg(f.filter(d=>d.respSecs).map(d=>d.respSecs));
   const hasPrev=p.length>0;
-  const periodLabel=getPeriodSlice(currentPeriodDays).prevLabel;
+  const periodLabel=currentPeriodDays===7?'últimos 7 días':currentPeriodDays===90?'últimos 90 días':'últimos 30 días';
   const kpis=[
     {label:'Conversaciones',tip:'Total de conversaciones de WhatsApp iniciadas en el período seleccionado, independientemente del canal o resultado.',val:total.toLocaleString(),delta:total-prevTotal,sfx:'',g:false},
     {label:'Escaladas a agente',tip:'Conversaciones que pasaron del flujo automatizado a ser atendidas por un agente humano. Incluye derivaciones manuales y automáticas.',val:esc+' ('+pct(esc,total)+')',delta:esc-prevEsc,sfx:'',g:false},
