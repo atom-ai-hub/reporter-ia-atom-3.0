@@ -338,6 +338,24 @@ tbody tr:hover td{background:var(--gray-50)}
 .dp-apply{width:100%;margin-top:12px;padding:8px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;transition:opacity .15s}
 .dp-apply:hover{opacity:.9}
 
+/* ── MULTI-SELECT ── */
+.ms-wrap{position:relative}
+.ms-btn{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:500;color:var(--black);transition:all .15s;white-space:nowrap;max-width:190px}
+.ms-btn:hover{border-color:var(--orange);color:var(--orange)}
+.ms-btn.has-sel{background:var(--orange-light);border-color:var(--orange-mid);color:var(--orange)}
+.ms-caret{font-size:9px;color:var(--gray-400);flex-shrink:0;transition:transform .15s}
+.ms-btn.open .ms-caret{transform:rotate(180deg)}
+.ms-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.ms-popover{position:absolute;top:calc(100%+4px);left:0;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;display:none;min-width:190px;max-height:280px;overflow-y:auto}
+.ms-popover.open{display:block}
+.ms-item{padding:7px 12px;cursor:pointer;font-size:12.5px;transition:background .1s}
+.ms-item:hover{background:var(--gray-50)}
+.ms-item label{display:flex;align-items:center;gap:8px;cursor:pointer;width:100%}
+.ms-item input[type=checkbox]{accent-color:var(--orange);cursor:pointer;flex-shrink:0}
+.ms-footer-row{padding:5px 12px 7px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;position:sticky;bottom:0;background:var(--white)}
+.ms-clear{font-size:11px;padding:3px 8px;background:none;border:none;color:var(--gray-500);cursor:pointer;font-family:inherit}
+.ms-clear:hover{color:var(--orange)}
+
 /* ── DOC PANEL ── */
 .doc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:200;backdrop-filter:blur(2px)}
 .doc-overlay.open{display:block}
@@ -605,6 +623,7 @@ tbody tr:hover td{background:var(--gray-50)}
     <div class="ai-search-hint">Solo puede responder sobre datos de <strong>conversaciones</strong> — no sobre otros reportes ni tablas</div>
   </div>
   <div class="filter-bar">
+    <span class="filter-label">Filtros</span><div class="filter-divider"></div>
     <div class="dp-wrap">
       <button class="dp-btn" id="dp-btn-general" onclick="toggleDP('general')">
         <span id="dp-label-general">Últimos 30 días</span><span class="dp-caret">▼</span>
@@ -629,33 +648,91 @@ tbody tr:hover td{background:var(--gray-50)}
       </div>
     </div>
     <div class="filter-divider"></div>
-    <span class="filter-label">Filtros</span><div class="filter-divider"></div>
-    <select id="f-origen"><option value="">Todos los orígenes</option><option>inbound organico</option><option>click to wa</option><option>campañas</option><option>webhooks</option><option>plantillas individuales</option></select>
-    <select id="f-bot"><option value="">Todos los flujos</option><option>Flujo Ventas</option><option>Flujo Soporte</option><option>Flujo Cobranza</option></select>
-    <select id="f-grupo"><option value="">Todos los grupos</option><option>Equipo Ventas</option><option>Equipo Soporte</option><option>Equipo Cobranza</option></select>
-    <select id="f-tipif"><option value="">Todas las tipificaciones</option><option>venta</option><option>soporte</option><option>sin respuesta</option><option>reagendar</option><option>no interesado</option></select>
-    <select id="f-etapa"><option value="">Todas las etapas</option><option>stage_1</option><option>stage_2</option><option>stage_3</option><option>stage_4</option></select>
-    <button class="reset-btn" onclick="resetFilters()">Limpiar</button>
+    <div class="ms-wrap" id="ms-wrap-origen">
+      <button class="ms-btn" id="ms-btn-origen" data-default="Todos los orígenes" onclick="toggleMS('origen')">
+        <span class="ms-label" id="ms-label-origen">Todos los orígenes</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-origen">
+        <div class="ms-item"><label><input type="checkbox" value="inbound organico" onchange="updateMSLabel('origen')"> inbound orgánico</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="click to wa" onchange="updateMSLabel('origen')"> click to wa</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="campañas" onchange="updateMSLabel('origen')"> campañas</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="webhooks" onchange="updateMSLabel('origen')"> webhooks</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="plantillas individuales" onchange="updateMSLabel('origen')"> plantillas individuales</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('origen')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="ms-wrap" id="ms-wrap-bot">
+      <button class="ms-btn" id="ms-btn-bot" data-default="Todos los flujos" onclick="toggleMS('bot')">
+        <span class="ms-label" id="ms-label-bot">Todos los flujos</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-bot">
+        <div class="ms-item"><label><input type="checkbox" value="Flujo Financiamiento" onchange="updateMSLabel('bot')"> Flujo Financiamiento</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="Flujo Tasación" onchange="updateMSLabel('bot')"> Flujo Tasación</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="Flujo Soporte" onchange="updateMSLabel('bot')"> Flujo Soporte</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('bot')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="ms-wrap" id="ms-wrap-grupo">
+      <button class="ms-btn" id="ms-btn-grupo" data-default="Todos los grupos" onclick="toggleMS('grupo')">
+        <span class="ms-label" id="ms-label-grupo">Todos los grupos</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-grupo">
+        <div class="ms-item"><label><input type="checkbox" value="Equipo Ventas" onchange="updateMSLabel('grupo')"> Equipo Ventas</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="Equipo Financiamiento" onchange="updateMSLabel('grupo')"> Equipo Financiamiento</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="Equipo Soporte" onchange="updateMSLabel('grupo')"> Equipo Soporte</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('grupo')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="ms-wrap" id="ms-wrap-tipif">
+      <button class="ms-btn" id="ms-btn-tipif" data-default="Todas las tipificaciones" onclick="toggleMS('tipif')">
+        <span class="ms-label" id="ms-label-tipif">Todas las tipificaciones</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-tipif">
+        <div class="ms-item"><label><input type="checkbox" value="venta" onchange="updateMSLabel('tipif')"> venta</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="sin respuesta" onchange="updateMSLabel('tipif')"> sin respuesta</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="reagendar" onchange="updateMSLabel('tipif')"> reagendar</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="no califica" onchange="updateMSLabel('tipif')"> no califica</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="pendiente docs" onchange="updateMSLabel('tipif')"> pendiente docs</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('tipif')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="ms-wrap" id="ms-wrap-etapa">
+      <button class="ms-btn" id="ms-btn-etapa" data-default="Todas las etapas" onclick="toggleMS('etapa')">
+        <span class="ms-label" id="ms-label-etapa">Todas las etapas</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-etapa">
+        <div class="ms-item"><label><input type="checkbox" value="stage_1" onchange="updateMSLabel('etapa')"> Primer contacto</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="stage_2" onchange="updateMSLabel('etapa')"> Lead</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="stage_3" onchange="updateMSLabel('etapa')"> MQL</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="stage_4" onchange="updateMSLabel('etapa')"> SQL</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('etapa')">Limpiar</button></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetFilters()">Limpiar todo</button>
     <button class="apply-btn" onclick="applyFilters()">Aplicar</button>
   </div>
   <div class="kpi-grid" id="kpi-grid"></div>
   <div class="card" style="margin-bottom:14px">
-    <div class="legend">
-      <div class="leg-item"><span class="leg-dot" style="background:#E8590C"></span>Conversaciones iniciadas</div>
-      <div class="leg-item"><span class="leg-dot" style="background:#2E7D32;border-radius:50%"></span>Ventas</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="card-title" style="margin-bottom:0">Conversaciones y ventas por día</span>
+        <span style="font-size:10px;color:var(--gray-300)">máx. 45 días</span>
+      </div>
+      <div class="legend" style="margin:0">
+        <div class="leg-item"><span class="leg-dot" style="background:rgba(232,89,12,0.65)"></span>Conversaciones</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#2E7D32;border-radius:50%"></span>Ventas</div>
+      </div>
     </div>
     <div style="position:relative;width:100%;height:240px"><canvas id="chart-daily"></canvas></div>
   </div>
   <div class="g2" style="margin-bottom:14px">
     <div class="card">
       <div class="card-title">Funnel de conversión</div>
-      <div class="card-sub">De awareness a venta · tasa de caída por etapa</div>
       <div id="funnel-html" style="margin-top:12px"></div>
     </div>
     <div class="card">
       <div class="card-title">Tipificaciones de agente</div>
-      <div class="card-sub">Distribución de cierres · mayor a menor</div>
-      <div style="position:relative;width:100%;height:220px"><canvas id="chart-tipif"></canvas></div>
+      <div style="position:relative;width:100%;height:220px;margin-top:12px"><canvas id="chart-tipif"></canvas></div>
     </div>
   </div>
   <div class="card" style="margin-top:14px">
@@ -715,9 +792,33 @@ tbody tr:hover td{background:var(--gray-50)}
     </div>
     <div class="filter-divider"></div>
     <span class="filter-label">Filtros</span><div class="filter-divider"></div>
-    <select id="cf-pais"><option value="">Todos los países</option><option>MX</option><option>AR</option><option>CO</option><option>CL</option><option>PE</option><option>UY</option></select>
-    <select id="cf-stage"><option value="">Todas las etapas</option><option>stage_1</option><option>stage_2</option><option>stage_3</option><option>stage_4</option></select>
-    <button class="reset-btn" onclick="resetContactFilters()">Limpiar</button>
+    <div class="ms-wrap" id="ms-wrap-cpais">
+      <button class="ms-btn" id="ms-btn-cpais" data-default="Todos los países" onclick="toggleMS('cpais')">
+        <span class="ms-label" id="ms-label-cpais">Todos los países</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-cpais">
+        <div class="ms-item"><label><input type="checkbox" value="MX" onchange="updateMSLabel('cpais')"> MX</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="AR" onchange="updateMSLabel('cpais')"> AR</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="CO" onchange="updateMSLabel('cpais')"> CO</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="CL" onchange="updateMSLabel('cpais')"> CL</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="PE" onchange="updateMSLabel('cpais')"> PE</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="UY" onchange="updateMSLabel('cpais')"> UY</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('cpais')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="ms-wrap" id="ms-wrap-cstage">
+      <button class="ms-btn" id="ms-btn-cstage" data-default="Todas las etapas" onclick="toggleMS('cstage')">
+        <span class="ms-label" id="ms-label-cstage">Todas las etapas</span><span class="ms-caret">▼</span>
+      </button>
+      <div class="ms-popover" id="ms-popover-cstage">
+        <div class="ms-item"><label><input type="checkbox" value="stage_1" onchange="updateMSLabel('cstage')"> Primer contacto</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="stage_2" onchange="updateMSLabel('cstage')"> Lead</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="stage_3" onchange="updateMSLabel('cstage')"> MQL</label></div>
+        <div class="ms-item"><label><input type="checkbox" value="stage_4" onchange="updateMSLabel('cstage')"> SQL</label></div>
+        <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('cstage')">Limpiar</button></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetContactFilters()">Limpiar todo</button>
     <button class="apply-btn" onclick="applyContactFilters()">Aplicar</button>
   </div>
   <div class="kpi-grid" id="ckpi-grid"></div>
@@ -832,9 +933,23 @@ tbody tr:hover td{background:var(--gray-50)}
       </div>
       <div class="filter-divider"></div>
       <span class="filter-label">Filtros</span><div class="filter-divider"></div>
-      <select id="mf-cuenta"><option value="">Todas las cuentas</option></select>
-      <select id="mf-camp"><option value="">Todas las campañas</option></select>
-      <button class="reset-btn" onclick="resetMetaFilters()">Limpiar</button>
+      <div class="ms-wrap" id="ms-wrap-mcuenta">
+        <button class="ms-btn" id="ms-btn-mcuenta" data-default="Todas las cuentas" onclick="toggleMS('mcuenta')">
+          <span class="ms-label" id="ms-label-mcuenta">Todas las cuentas</span><span class="ms-caret">▼</span>
+        </button>
+        <div class="ms-popover" id="ms-popover-mcuenta">
+          <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('mcuenta')">Limpiar</button></div>
+        </div>
+      </div>
+      <div class="ms-wrap" id="ms-wrap-mcamp">
+        <button class="ms-btn" id="ms-btn-mcamp" data-default="Todas las campañas" onclick="toggleMS('mcamp')">
+          <span class="ms-label" id="ms-label-mcamp">Todas las campañas</span><span class="ms-caret">▼</span>
+        </button>
+        <div class="ms-popover" id="ms-popover-mcamp">
+          <div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('mcamp')">Limpiar</button></div>
+        </div>
+      </div>
+      <button class="reset-btn" onclick="resetMetaFilters()">Limpiar todo</button>
       <button class="apply-btn" onclick="renderMetaCtwa()">Aplicar</button>
     </div>
     <div class="kpi-grid" id="meta-kpis" style="margin-bottom:16px;grid-template-columns:repeat(4,1fr)"></div>
@@ -967,11 +1082,16 @@ const LANDINGS=['/financiamiento','/promo-mayo-autos','/tasacion-online','/catal
 const TMPL_NAMES=['Bienvenida_Nuevo_Lead','Seguimiento_Sin_Respuesta','Promo_Tasa_0_Mayo','Recordatorio_Visita_Concesionaria','Documentos_Pendientes'];
 const CAMP_NAMES=['Campaña Leads Financiamiento','Reactivación Sin Respuesta','Promo Tasa 0% Mayo','Seguimiento Tasación','Recordatorio Documentos'];
 
+const TODAY_DEMO=new Date(2024,4,8); // May 8 2024 — "today" for demo
+
 // ── DATA GENERATION (report data) ─────────────────────────────
-function genRecord(mo){
+function genRecord(isCurr){
   const origen=pick(ORIGENES);
   const dir=['campañas','plantillas individuales'].includes(origen)?'outbound':'inbound';
-  const d=new Date(2024,3+mo,ri(1,30),ri(8,20),ri(0,59),ri(0,59));
+  const dBack=isCurr?ri(0,29):ri(30,59);
+  const dBase=new Date(TODAY_DEMO);
+  dBase.setDate(TODAY_DEMO.getDate()-dBack);
+  const d=new Date(dBase.getFullYear(),dBase.getMonth(),dBase.getDate(),ri(8,20),ri(0,59),ri(0,59));
   const escalado=seed()<.55;
   const fechaAsig=escalado?new Date(d.getTime()+ri(1,15)*60000):null;
   const firstResp=escalado?new Date(fechaAsig.getTime()+ri(30,600)*1000):null;
@@ -983,16 +1103,23 @@ function genRecord(mo){
     agentTipif:escalado&&seed()<.9?pick(AGENT_TIPIFS):null,
     maxStage:'stage_'+ri(1,4)};
 }
-const DATA=Array.from({length:200},()=>genRecord(1));
-const PREV=Array.from({length:160},()=>genRecord(0));
+const DATA=Array.from({length:200},()=>genRecord(true));
+const PREV=Array.from({length:160},()=>genRecord(false));
 let filtered=[...DATA];
 let prevFiltered=[...PREV];
 let currentPeriodDays=30;
 
+const MES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function getPeriodSlice(days){
-  if(days===7) return{curr:DATA.filter(d=>d.fecha.getDate()>=25),prev:PREV.filter(d=>d.fecha.getDate()>=25),label:'Mayo 25–31',prevLabel:'Abr 25–30'};
-  if(days===90) return{curr:[...DATA,...PREV],prev:[],label:'Mar–May 2024',prevLabel:'Sin datos previos'};
-  return{curr:[...DATA],prev:[...PREV],label:'Mayo 2024',prevLabel:'Abril 2024'};
+  const endDate=new Date(TODAY_DEMO);endDate.setHours(23,59,59,999);
+  const startDate=new Date(TODAY_DEMO);startDate.setDate(TODAY_DEMO.getDate()-days+1);startDate.setHours(0,0,0,0);
+  const prevEnd=new Date(startDate);prevEnd.setDate(startDate.getDate()-1);prevEnd.setHours(23,59,59,999);
+  const prevStart=new Date(prevEnd);prevStart.setDate(prevEnd.getDate()-days+1);prevStart.setHours(0,0,0,0);
+  const pool=[...DATA,...PREV];
+  const curr=pool.filter(d=>d.fecha>=startDate&&d.fecha<=endDate);
+  const prev=pool.filter(d=>d.fecha>=prevStart&&d.fecha<=prevEnd);
+  const fmtD=d=>MES_CORTO[d.getMonth()]+' '+d.getDate();
+  return{curr,prev,label:fmtD(startDate)+' – '+fmtD(endDate),prevLabel:`últimos ${days} días`};
 }
 function setPeriod(days,btn){
   currentPeriodDays=days;
@@ -1533,6 +1660,45 @@ function goToPautaTab(tabId,navBtn,group,name){
   },80);
 }
 
+// ── MULTI-SELECT ───────────────────────────────────────────────
+function toggleMS(id){
+  const pop=document.getElementById('ms-popover-'+id);
+  const btn=document.getElementById('ms-btn-'+id);
+  const isOpen=pop.classList.contains('open');
+  document.querySelectorAll('.ms-popover').forEach(p=>p.classList.remove('open'));
+  document.querySelectorAll('.ms-btn').forEach(b=>b.classList.remove('open'));
+  document.querySelectorAll('.dp-popover').forEach(p=>p.classList.remove('open'));
+  document.querySelectorAll('.dp-btn').forEach(b=>b.classList.remove('open'));
+  if(!isOpen){pop.classList.add('open');btn.classList.add('open');}
+}
+function getMS(id){
+  return[...document.querySelectorAll(`#ms-popover-${id} input:checked`)].map(i=>i.value);
+}
+function clearMS(id){
+  document.querySelectorAll(`#ms-popover-${id} input`).forEach(i=>i.checked=false);
+  updateMSLabel(id);
+}
+function updateMSLabel(id){
+  const vals=getMS(id);
+  const btn=document.getElementById('ms-btn-'+id);
+  const label=document.getElementById('ms-label-'+id);
+  if(!btn||!label)return;
+  const def=btn.dataset.default||'Todos';
+  if(!vals.length){label.textContent=def;btn.classList.remove('has-sel');}
+  else if(vals.length===1){label.textContent=vals[0];btn.classList.add('has-sel');}
+  else{label.textContent=vals.length+' seleccionados';btn.classList.add('has-sel');}
+}
+function populateMS(id,values){
+  const pop=document.getElementById('ms-popover-'+id);
+  if(!pop||pop.querySelectorAll('.ms-item').length>0)return;
+  const footer=pop.querySelector('.ms-footer-row');
+  values.forEach(v=>{
+    const div=document.createElement('div');div.className='ms-item';
+    div.innerHTML=`<label><input type="checkbox" value="${v}" onchange="updateMSLabel('${id}')"> ${v}</label>`;
+    pop.insertBefore(div,footer);
+  });
+}
+
 // ── DATE PICKER ────────────────────────────────────────────────
 function toggleDP(scope){
   const btn=document.getElementById('dp-btn-'+scope);
@@ -1563,9 +1729,11 @@ function applyCustomRange(scope){
   else if(scope==='contactos')applyContactFilters();
 }
 document.addEventListener('click',function(e){
-  if(!e.target.closest('.dp-wrap')){
+  if(!e.target.closest('.dp-wrap')&&!e.target.closest('.ms-wrap')){
     document.querySelectorAll('.dp-popover').forEach(p=>p.classList.remove('open'));
     document.querySelectorAll('.dp-btn').forEach(b=>b.classList.remove('open'));
+    document.querySelectorAll('.ms-popover').forEach(p=>p.classList.remove('open'));
+    document.querySelectorAll('.ms-btn').forEach(b=>b.classList.remove('open'));
   }
 });
 
@@ -1666,17 +1834,21 @@ const dc=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
 // ── REPORT RENDER ──────────────────────────────────────────────
 function applyFilters(){
   const {curr,prev}=getPeriodSlice(currentPeriodDays);
-  const o=document.getElementById('f-origen').value,b=document.getElementById('f-bot').value,
-    g=document.getElementById('f-grupo').value,t=document.getElementById('f-tipif').value,
-    e=document.getElementById('f-etapa').value;
-  const filt=d=>(!o||d.origen===o)&&(!b||d.bot===b)&&(!g||d.grupo===g)&&(!t||d.agentTipif===t)&&(!e||d.maxStage===e);
+  const oV=getMS('origen'),bV=getMS('bot'),gV=getMS('grupo'),tV=getMS('tipif'),eV=getMS('etapa');
+  const filt=d=>(
+    (!oV.length||oV.includes(d.origen))&&
+    (!bV.length||bV.includes(d.bot))&&
+    (!gV.length||gV.includes(d.grupo))&&
+    (!tV.length||tV.includes(d.agentTipif))&&
+    (!eV.length||eV.includes(d.maxStage))
+  );
   filtered=curr.filter(filt);
   prevFiltered=prev.filter(filt);
   updatePeriodLabels();
   render();
 }
 function resetFilters(){
-  ['f-origen','f-bot','f-grupo','f-tipif','f-etapa'].forEach(id=>document.getElementById(id).value='');
+  ['origen','bot','grupo','tipif','etapa'].forEach(clearMS);
   const {curr,prev}=getPeriodSlice(currentPeriodDays);
   filtered=[...curr];prevFiltered=[...prev];
   updatePeriodLabels();render();
@@ -1716,16 +1888,77 @@ function renderKPIs(){
 }
 function renderDaily(){
   dc('daily');
-  const days=Array.from({length:31},(_,i)=>i+1);
+  const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const TODAY_DEMO=new Date(2024,4,31); // May 31 2024 as demo "today"
+  const nDays=Math.min(currentPeriodDays,45);
+  const dates=[];
+  for(let i=nDays-1;i>=0;i--){const d=new Date(TODAY_DEMO);d.setDate(TODAY_DEMO.getDate()-i);dates.push(d);}
+  const labels=dates.map(d=>MES[d.getMonth()]+' '+d.getDate());
+  const isSameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  const convData=dates.map(d=>filtered.filter(r=>isSameDay(r.fecha,d)).length);
+  const ventaData=dates.map(d=>filtered.filter(r=>isSameDay(r.fecha,d)&&isConversion(r)).length);
+
+  // Key point indices: global max, global min (non-zero), and evenly spaced intermediates
+  const maxV=Math.max(...convData);
+  const maxIdx=convData.lastIndexOf(maxV);
+  const nonZeroIdxs=convData.map((v,i)=>v>0?i:-1).filter(i=>i>=0);
+  const minIdx=nonZeroIdxs.length?nonZeroIdxs.reduce((a,b)=>convData[a]<convData[b]?a:b):-1;
+  const step=Math.max(1,Math.floor(nDays/4));
+  const keySet=new Set([0,maxIdx,minIdx,nDays-1].filter(i=>i>=0));
+  for(let i=step;i<nDays-1;i+=step)keySet.add(i);
+  const keyArr=[...keySet];
+
+  const pointRadii=convData.map((_,i)=>keySet.has(i)?3:0);
+  const pointHoverRadii=convData.map((_,i)=>keySet.has(i)?5:3);
+
   charts['daily']=new Chart(document.getElementById('chart-daily'),{
     data:{
-      labels:days.map(String),
+      labels,
       datasets:[
-        {type:'bar',label:'Conversaciones iniciadas',data:days.map(d=>filtered.filter(r=>r.fecha.getDate()===d).length),backgroundColor:'rgba(232,89,12,0.75)',borderRadius:3,borderWidth:0},
-        {type:'line',label:'Ventas',data:days.map(d=>filtered.filter(r=>r.fecha.getDate()===d&&isConversion(r)).length),borderColor:'#2E7D32',backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:'#2E7D32',borderWidth:2}
+        {type:'bar',label:'Conversaciones',data:convData,backgroundColor:'rgba(232,89,12,0.62)',borderRadius:3,borderWidth:0,order:2},
+        {type:'line',label:'Ventas',data:ventaData,borderColor:'#2E7D32',backgroundColor:'transparent',tension:.35,pointRadius:pointRadii,pointHoverRadius:pointHoverRadii,pointBackgroundColor:'#2E7D32',pointBorderWidth:0,borderWidth:2,order:1,
+          datalabels:{keyIndices:keyArr,color:'#2E7D32',values:ventaData},
+          convDatalabels:{keyIndices:keyArr,color:'#E8590C',values:convData}
+        }
       ]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{ticks:{font:{size:11},maxTicksLimit:16},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{mode:'index',intersect:false},
+        keyPointLabels:{enabled:true}
+      },
+      scales:{
+        x:{ticks:{font:{size:10},maxTicksLimit:nDays<=15?nDays:Math.min(12,nDays),maxRotation:0},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}}
+      }
+    },
+    plugins:[{
+      id:'keyPointLabels',
+      afterDatasetsDraw(chart){
+        const ctx=chart.ctx;
+        const ds0=chart.getDatasetMeta(0); // bars
+        const ds1=chart.getDatasetMeta(1); // line
+        const convD=convData,ventaD=ventaData;
+        ctx.save();
+        ctx.font='500 10px "DM Sans",sans-serif';
+        ctx.textAlign='center';
+        // Conv labels above bars at key points
+        ctx.fillStyle='rgba(180,60,0,0.85)';
+        keyArr.forEach(i=>{
+          const bar=ds0.data[i];if(!bar||!convD[i])return;
+          ctx.fillText(convD[i],bar.x,bar.y-5);
+        });
+        // Venta labels above line points
+        ctx.fillStyle='#2E7D32';
+        keyArr.forEach(i=>{
+          const pt=ds1.data[i];if(!pt||!ventaD[i])return;
+          ctx.fillText(ventaD[i],pt.x,pt.y-7);
+        });
+        ctx.restore();
+      }
+    }]
   });
 }
 function renderFunnel(){
@@ -1775,8 +2008,56 @@ function renderSLA(){
 }
 function renderTipif(){
   dc('tipif');
+  const TIPIF_COLORS=['rgba(232,89,12,0.55)','rgba(46,125,50,0.55)','rgba(21,101,192,0.55)','rgba(106,27,154,0.55)','rgba(230,81,0,0.55)'];
   const sorted=AGENT_TIPIFS.map(t=>({t,v:filtered.filter(d=>d.agentTipif===t).length})).sort((a,b)=>b.v-a.v);
-  charts['tipif']=new Chart(document.getElementById('chart-tipif'),{type:'bar',data:{labels:sorted.map(c=>c.t+' (de agente)'),datasets:[{data:sorted.map(c=>c.v),backgroundColor:sorted.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} (${Math.round(ctx.raw/(filtered.length||1)*100)}%)`}}},scales:{x:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  const total=filtered.length||1;
+  charts['tipif']=new Chart(document.getElementById('chart-tipif'),{
+    type:'bar',
+    data:{
+      labels:sorted.map(c=>c.t),
+      datasets:[{
+        data:sorted.map(c=>c.v),
+        backgroundColor:sorted.map((_,i)=>TIPIF_COLORS[i%TIPIF_COLORS.length]),
+        borderWidth:0,borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} (${Math.round(ctx.raw/total*100)}%)`}}},
+      scales:{
+        x:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:11}},grid:{display:false}}
+      }
+    },
+    plugins:[{
+      id:'tipifLabels',
+      afterDatasetsDraw(chart){
+        const ctx=chart.ctx;
+        const meta=chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.font='600 11px "DM Sans",sans-serif';
+        ctx.textBaseline='middle';
+        meta.data.forEach((bar,i)=>{
+          const v=sorted[i].v;if(!v)return;
+          const pct=Math.round(v/total*100);
+          const label=`${v}  ${pct}%`;
+          // For horizontal bars: bar.x = right edge, bar.base = left edge (zero)
+          const barW=bar.x-bar.base;
+          const hasRoom=barW>72;
+          if(hasRoom){
+            ctx.fillStyle='rgba(255,255,255,0.92)';
+            ctx.textAlign='left';
+            ctx.fillText(label,bar.base+10,bar.y);
+          } else {
+            ctx.fillStyle='#555';
+            ctx.textAlign='left';
+            ctx.fillText(label,bar.x+6,bar.y);
+          }
+        });
+        ctx.restore();
+      }
+    }]
+  });
 }
 function renderConvOrigen(){
   dc('conv-origen');
@@ -1865,35 +2146,24 @@ function setMetaPeriod(d,btn){
   renderMetaCtwa();
 }
 function resetMetaFilters(){
-  document.getElementById('mf-cuenta').value='';
-  document.getElementById('mf-camp').value='';
+  clearMS('mcuenta');clearMS('mcamp');
   renderMetaCtwa();
 }
 function renderMetaCtwa(){
-  // Populate selects on first render
-  const cuentaSel=document.getElementById('mf-cuenta');
-  const campSel=document.getElementById('mf-camp');
-  if(cuentaSel.options.length<=1){
-    [...new Set(DB.meta_ads.map(r=>r.account_name))].forEach(n=>{
-      const o=document.createElement('option');o.value=n;o.textContent=n;cuentaSel.appendChild(o);
-    });
-  }
-  if(campSel.options.length<=1){
-    [...new Set(DB.meta_ads.map(r=>r.campaign_name))].forEach(n=>{
-      const o=document.createElement('option');o.value=n;o.textContent=n;campSel.appendChild(o);
-    });
-  }
+  // Populate multi-select on first render
+  populateMS('mcuenta',[...new Set(DB.meta_ads.map(r=>r.account_name))]);
+  populateMS('mcamp',[...new Set(DB.meta_ads.map(r=>r.campaign_name))]);
 
-  const cuentaFilt=cuentaSel.value;
-  const campFilt=campSel.value;
+  const cuentaFilt=getMS('mcuenta');
+  const campFilt=getMS('mcamp');
 
   // Period scale factor (fake — no daily data per ad)
   const scale=metaPeriodDays===7?7/30:metaPeriodDays===90?90/30:1;
   const prevLabel=metaPeriodDays===7?'semana anterior':metaPeriodDays===90?'trim. anterior':'mes anterior';
 
   let ads=DB.meta_ads.filter(r=>
-    (!cuentaFilt||r.account_name===cuentaFilt)&&
-    (!campFilt||r.campaign_name===campFilt)
+    (!cuentaFilt.length||cuentaFilt.includes(r.account_name))&&
+    (!campFilt.length||campFilt.includes(r.campaign_name))
   );
 
   const sc=v=>Math.round(v*scale);
@@ -1939,30 +2209,25 @@ function renderMetaCtwa(){
       <div class="kpi-value">${fv}</div>${dEl}</div>`;
   }).join('');
 
-  // Daily chart
-  const days=metaPeriodDays===7?7:metaPeriodDays===90?90:31;
-  const dailyConvs=Array.from({length:days},(_,i)=>{
-    const base=Math.round(totalConvs/days);
+  // Daily chart — real dates
+  const nDaysMeta=Math.min(metaPeriodDays,45);
+  const metaDates=[];
+  for(let i=nDaysMeta-1;i>=0;i--){const d=new Date(TODAY_DEMO);d.setDate(TODAY_DEMO.getDate()-i);metaDates.push(d);}
+  const dayLabels=metaDates.map(d=>MES_CORTO[d.getMonth()]+' '+d.getDate());
+  const dailyConvs=metaDates.map((_,i)=>{
+    const base=Math.round(totalConvs/nDaysMeta);
     return Math.max(0,base+Math.round((Math.sin(i*2.3+1.1)*0.4)*base));
   });
-  const dailySpend=Array.from({length:days},(_,i)=>{
-    const base=totalSpend/days;
+  const dailySpend=metaDates.map((_,i)=>{
+    const base=totalSpend/nDaysMeta;
     return Math.max(0,Math.round(base+Math.sin(i*1.7+0.5)*0.35*base));
   });
-  const prevDailyConvs=Array.from({length:days},(_,i)=>{
-    const base=Math.round(prevConvs/days);
-    return Math.max(0,base+Math.round((Math.sin(i*2.1+0.7)*0.35)*base));
-  });
-  const dayLabels=Array.from({length:days},(_,i)=>
-    metaPeriodDays===90?`S${Math.floor(i/7)+1}`:`${i+1}`
-  );
   dc('meta-daily');
   charts['meta-daily']=new Chart(document.getElementById('chart-meta-daily'),{
     data:{
       labels:dayLabels,
       datasets:[
         {type:'bar',label:'Conversaciones (actual)',data:dailyConvs,backgroundColor:'rgba(232,89,12,0.3)',borderColor:'rgba(232,89,12,0.7)',borderWidth:1,borderRadius:3,yAxisID:'y'},
-        {type:'line',label:'Conversaciones (anterior)',data:prevDailyConvs,borderColor:'#D1D0CC',backgroundColor:'transparent',tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,4],yAxisID:'y'},
         {type:'line',label:'Gasto USD',data:dailySpend,borderColor:'#1565C0',backgroundColor:'transparent',tension:.4,pointRadius:2,borderWidth:2,yAxisID:'y2'}
       ]
     },
@@ -2272,17 +2537,14 @@ const STAGE_COLS={'stage_1':'#E3F2FD','stage_2':'#FFF3EC','stage_3':'#E8F5E9','s
 const STAGE_TEXT={'stage_1':'#1565C0','stage_2':'#E8590C','stage_3':'#2E7D32','stage_4':'#6A1B9A'};
 const STAGE_LABELS={'stage_1':'Primer contacto','stage_2':'Calificado','stage_3':'Propuesta enviada','stage_4':'Cerrado'};
 
-function getContactData(days,paisFilt,stageFilt){
-  const mo05=c=>c.created_at.startsWith('2024-05');
-  const mo04=c=>c.created_at.startsWith('2024-04');
-  const day25=c=>parseInt(c.created_at.slice(8,10))>=25;
-
-  const currConvs = days===7 ? DB.conversations.filter(c=>mo05(c)&&day25(c))
-                  : days===90? DB.conversations
-                  : DB.conversations.filter(mo05);
-  const prevConvs = days===7 ? DB.conversations.filter(c=>mo04(c)&&day25(c))
-                  : days===90? []
-                  : DB.conversations.filter(mo04);
+function getContactData(days,paisVals,stageVals){
+  const endDate=new Date(TODAY_DEMO);endDate.setHours(23,59,59,999);
+  const startDate=new Date(TODAY_DEMO);startDate.setDate(TODAY_DEMO.getDate()-days+1);startDate.setHours(0,0,0,0);
+  const prevEnd=new Date(startDate);prevEnd.setDate(startDate.getDate()-1);prevEnd.setHours(23,59,59,999);
+  const prevStart=new Date(prevEnd);prevStart.setDate(prevEnd.getDate()-days+1);prevStart.setHours(0,0,0,0);
+  const inRange=(c,s,e)=>{const dt=new Date(c.created_at);return dt>=s&&dt<=e;};
+  const currConvs=DB.conversations.filter(c=>inRange(c,startDate,endDate));
+  const prevConvs=DB.conversations.filter(c=>inRange(c,prevStart,prevEnd));
 
   const cMap={};
   DB.contacts.forEach(c=>cMap[c.contact_id]=c);
@@ -2306,15 +2568,15 @@ function getContactData(days,paisFilt,stageFilt){
   let curr=buildContacts(currConvs);
   let prev=buildContacts(prevConvs);
 
-  if(paisFilt) curr=curr.filter(c=>c.country===paisFilt);
-  if(stageFilt) curr=curr.filter(c=>c.latestStage===stageFilt);
+  if(paisVals&&paisVals.length) curr=curr.filter(c=>paisVals.includes(c.country));
+  if(stageVals&&stageVals.length) curr=curr.filter(c=>stageVals.includes(c.latestStage));
   return{curr,prev};
 }
 
 function renderContactos(){
-  const pais=document.getElementById('cf-pais')?.value||'';
-  const stage=document.getElementById('cf-stage')?.value||'';
-  const {curr,prev}=getContactData(contactPeriodDays,pais,stage);
+  const paisVals=getMS('cpais');
+  const stageVals=getMS('cstage');
+  const {curr,prev}=getContactData(contactPeriodDays,paisVals,stageVals);
   renderCKPIs(curr,prev);
   renderCDaily(curr);
   renderCFields(curr);
@@ -2341,7 +2603,7 @@ function renderCKPIs(curr,prev){
     const dSign=k.delta>=0?'↑':'↓';
     const dCls=k.g?(k.delta>=0?'du':'dd'):(k.delta<=0?'du':'dd');
     const dEl=k.delta!==null&&hasPrev
-      ?`<div class="kpi-delta ${dCls}">${dSign} ${k.delta>0?'+':''}${k.delta} vs período ant.</div>`
+      ?`<div class="kpi-delta ${dCls}">${dSign} ${k.delta>0?'+':''}${k.delta} vs últimos ${contactPeriodDays} días</div>`
       :`<div class="kpi-delta dn">período actual</div>`;
     return`<div class="kpi-card${k.g?' g':''}" style="animation-delay:${i*.04}s">
       <div class="kpi-label">${k.label}<span class="kpi-tip"><span class="kpi-tip-icon">?</span><div class="kpi-tip-box">${k.tip}</div></span></div>
@@ -2351,17 +2613,22 @@ function renderCKPIs(curr,prev){
 
 function renderCDaily(curr){
   dc('c-daily');
-  const days=Array.from({length:31},(_,i)=>i+1);
-  const newByDay=days.map(d=>curr.filter(c=>c.isNew&&c.date&&parseInt(c.date.slice(8,10))===d).length);
-  const retByDay=days.map(d=>curr.filter(c=>!c.isNew&&c.date&&parseInt(c.date.slice(8,10))===d).length);
+  const nDays=Math.min(contactPeriodDays,45);
+  const dates=[];
+  for(let i=nDays-1;i>=0;i--){const d=new Date(TODAY_DEMO);d.setDate(TODAY_DEMO.getDate()-i);dates.push(d);}
+  const labels=dates.map(d=>MES_CORTO[d.getMonth()]+' '+d.getDate());
+  const isSameDay=(a,b)=>{const db=new Date(b);return a.getFullYear()===db.getFullYear()&&a.getMonth()===db.getMonth()&&a.getDate()===db.getDate();};
+  const newByDay=dates.map(d=>curr.filter(c=>c.isNew&&c.date&&isSameDay(d,c.date)).length);
+  const retByDay=dates.map(d=>curr.filter(c=>!c.isNew&&c.date&&isSameDay(d,c.date)).length);
   charts['c-daily']=new Chart(document.getElementById('chart-c-daily'),{
     type:'bar',
-    data:{labels:days.map(String),datasets:[
-      {label:'Nuevos',data:newByDay,backgroundColor:'#E8590C',borderRadius:3,borderWidth:0},
-      {label:'Recurrentes',data:retByDay,backgroundColor:'#D1D0CC',borderRadius:3,borderWidth:0}
+    data:{labels,datasets:[
+      {label:'Nuevos',data:newByDay,backgroundColor:'rgba(232,89,12,0.7)',borderRadius:3,borderWidth:0,order:2},
+      {label:'Recurrentes',data:retByDay,backgroundColor:'rgba(209,208,204,0.7)',borderRadius:3,borderWidth:0,order:2}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},
-      scales:{x:{stacked:true,ticks:{font:{size:10},maxTicksLimit:16},grid:{display:false}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{x:{stacked:true,ticks:{font:{size:10},maxTicksLimit:12},grid:{display:false}},
         y:{stacked:true,beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
 }
@@ -2438,9 +2705,7 @@ function setContactField(fn,btn){
   activeContactField=fn;
   btn.closest('#c-field-btns').querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  const pais=document.getElementById('cf-pais')?.value||'';
-  const stage=document.getElementById('cf-stage')?.value||'';
-  const {curr}=getContactData(contactPeriodDays,pais,stage);
+  const {curr}=getContactData(contactPeriodDays,getMS('cpais'),getMS('cstage'));
   renderCFieldTable(curr);
 }
 
@@ -2512,8 +2777,7 @@ function setContactPeriod(days,btn){
 }
 function applyContactFilters(){renderContactos();}
 function resetContactFilters(){
-  document.getElementById('cf-pais').value='';
-  document.getElementById('cf-stage').value='';
+  clearMS('cpais');clearMS('cstage');
   renderContactos();
 }
 
