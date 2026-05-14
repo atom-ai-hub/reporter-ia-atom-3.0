@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PulseWA — Reportes</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -32,6 +34,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--gray-50);color:var(--blac
 .export-btn:hover{opacity:.8}
 .ai-chat-btn{display:flex;align-items:center;gap:7px;font-size:12px;padding:6px 14px;background:var(--white);color:var(--black);border:1px solid var(--gray-200);border-radius:20px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .ai-chat-btn:hover{border-color:var(--orange);color:var(--orange);box-shadow:0 1px 8px rgba(232,89,12,.15)}
+.company-dd{position:relative;font-size:12px;font-family:inherit;font-weight:500;min-width:200px;max-width:260px;user-select:none}
+.company-dd-trigger{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 10px;border:1px solid var(--gray-200);border-radius:20px;background:var(--white);color:var(--gray-500);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:border-color .15s;white-space:nowrap}
+.company-dd-trigger:hover,.company-dd.open .company-dd-trigger{border-color:var(--orange);color:var(--orange)}
+.company-dd-trigger .dd-label{overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.company-dd-trigger .dd-arrow{font-size:10px;flex-shrink:0;transition:transform .15s}
+.company-dd.open .dd-arrow{transform:rotate(180deg)}
+.company-dd-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:260px;max-width:320px;background:var(--white);border:1px solid var(--gray-200);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:999;overflow:hidden}
+.company-dd.open .company-dd-menu{display:block}
+.company-dd-search{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:none;border-bottom:1px solid var(--gray-100);font-size:12px;font-family:inherit;outline:none;background:var(--white)}
+.company-dd-search::placeholder{color:var(--gray-300)}
+.company-dd-list{max-height:260px;overflow-y:auto}
+.company-dd-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;gap:8px;transition:background .1s}
+.company-dd-item:hover{background:var(--gray-50,#f9f9f9)}
+.company-dd-item.selected{background:#fff5f0}
+.company-dd-item .dd-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--black)}
+.company-dd-item .dd-item-count{flex-shrink:0;font-size:11px;color:var(--gray-400);background:var(--gray-100);border-radius:20px;padding:1px 7px}
+.company-dd-empty{padding:12px;color:var(--gray-400);font-size:12px;text-align:center}
+.company-loading{font-size:12px;color:var(--gray-500);padding:8px 16px;text-align:center}
+.filter-loading-dot{width:5px;height:5px;border-radius:50%;background:var(--orange);animation:bq-pulse 1.2s ease-in-out infinite}
+.filter-loading-dot:nth-child(2){animation-delay:.2s}
+.filter-loading-dot:nth-child(3){animation-delay:.4s}
+@keyframes bq-pulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.dd-loader{display:none;align-items:center;gap:3px}
+.dd-loader.visible{display:flex}
+.no-company-hint{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 0 10px;opacity:.45;pointer-events:none}
+.no-company-hint svg{width:28px;height:28px;color:var(--gray-400)}
+.no-company-hint span{font-size:11px;color:var(--gray-400);font-weight:500;letter-spacing:.2px}
+.kpi-ghost{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
+.kpi-ghost-bar{height:10px;border-radius:4px;background:var(--gray-200);margin-bottom:8px}
+.kpi-ghost-bar.w60{width:60%}
+.kpi-ghost-bar.w40{width:40%}
+.kpi-ghost-bar.w80{width:80%}
 .ai-chat-icon{color:var(--orange);font-size:14px}
 .chat-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:200;backdrop-filter:blur(2px)}
 .chat-overlay.open{display:block}
@@ -380,10 +414,24 @@ tbody tr:hover td{background:var(--gray-50)}
 
 <nav class="nav">
   <div class="nav-brand"><div class="nav-logo">pulse<span>WA</span></div></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:18px;flex-shrink:0">
+    <div class="company-dd" id="company-dd">
+      <div class="company-dd-trigger" onclick="toggleCompanyDD()">
+        <span class="dd-label" id="company-dd-label">— Seleccioná una empresa —</span>
+        <span class="dd-arrow">▾</span>
+      </div>
+      <div class="company-dd-menu" style="left:0;right:auto">
+        <input class="company-dd-search" id="company-dd-search" type="text" placeholder="Buscar empresa..." oninput="filterCompanyDD(this.value)" />
+        <div class="company-dd-list" id="company-dd-list"></div>
+      </div>
+    </div>
+    <div class="dd-loader" id="dd-loader">
+      <div class="filter-loading-dot"></div><div class="filter-loading-dot"></div><div class="filter-loading-dot"></div>
+    </div>
+  </div>
   <div class="nav-right">
     <div class="nav-crumb"><span id="nav-group-name" style="color:var(--gray-300)">General</span><span style="color:var(--gray-200)">›</span><strong id="nav-page-name">Conversaciones</strong></div>
     <div class="period-badge" id="period-badge">Mayo 2024 vs Abril 2024</div>
-    <button class="ai-chat-btn" onclick="toggleChat()"><span class="ai-chat-icon">✦</span> Preguntá lo que quieras</button>
     <button class="export-btn" onclick="window.print()">↓ Exportar</button>
   </div>
 </nav>
@@ -626,14 +674,14 @@ tbody tr:hover td{background:var(--gray-50)}
     <span class="filter-label">Filtros</span><div class="filter-divider"></div>
     <div class="dp-wrap">
       <button class="dp-btn" id="dp-btn-general" onclick="toggleDP('general')">
-        <span id="dp-label-general">Últimos 30 días</span><span class="dp-caret">▼</span>
+        <span id="dp-label-general">Últimos 15 días</span><span class="dp-caret">▼</span>
       </button>
       <div class="dp-popover" id="dp-popover-general">
         <div class="dp-quick">
           <div class="dp-quick-label">Accesos rápidos</div>
           <div class="dp-quick-item" data-scope="general" data-days="7" onclick="selectQuickPeriod('general','Últimos 7 días',7,this)">Últimos 7 días</div>
-          <div class="dp-quick-item active" data-scope="general" data-days="30" onclick="selectQuickPeriod('general','Últimos 30 días',30,this)">Últimos 30 días</div>
-          <div class="dp-quick-item" data-scope="general" data-days="90" onclick="selectQuickPeriod('general','Últimos 90 días',90,this)">Últimos 90 días</div>
+          <div class="dp-quick-item active" data-scope="general" data-days="15" onclick="selectQuickPeriod('general','Últimos 15 días',15,this)">Últimos 15 días</div>
+          <div class="dp-quick-item" data-scope="general" data-days="30" onclick="selectQuickPeriod('general','Últimos 30 días',30,this)">Últimos 30 días</div>
           <div class="dp-quick-item" data-scope="general" data-days="cm" onclick="selectQuickPeriod('general','Mes actual',30,this)">Mes actual</div>
           <div class="dp-quick-item" data-scope="general" data-days="lm" onclick="selectQuickPeriod('general','Mes anterior',30,this)">Mes anterior</div>
         </div>
@@ -1060,64 +1108,133 @@ tbody tr:hover td{background:var(--gray-50)}
 <div class="cfg-toast" id="cfg-toast">✓ KPIs recalculados con la nueva configuración</div>
 
 <script>
-// ── SEEDED RNG ─────────────────────────────────────────────────
-const seed=(s=>()=>{s^=s<<13;s^=s>>17;s^=s<<5;return(s>>>0)/4294967296;})(42);
-const pick=a=>a[Math.floor(seed()*a.length)];
-const ri=(a,b)=>Math.floor(seed()*(b-a+1))+a;
+// Chart instances — al tope para garantizar inicialización antes de cualquier función
+window.charts = {};
 
-// ── CONSTANTS ──────────────────────────────────────────────────
-const ORIGENES=['inbound organico','click to wa','campañas','webhooks','plantillas individuales'];
-const BOTS=['Flujo Financiamiento','Flujo Tasación','Flujo Soporte'];
-const GRUPOS=['Equipo Ventas','Equipo Financiamiento','Equipo Soporte'];
-const BOT_TIPIFS=['interesado','no califica','consulta resuelta','derivar','sin respuesta bot'];
-const AGENT_TIPIFS=['venta','sin respuesta','reagendar','no califica','pendiente docs'];
-const CONV_RATES={'click to wa':.18,'campañas':.12,'plantillas individuales':.14,'inbound organico':.08,'webhooks':.06};
-const AGENT_NAMES=['Ana García','Carlos López','María Fernández','Luis Martínez','Sofía Rodríguez'];
-const CONTACT_NAMES=['Tomás Herrera','Valentina Cruz','Diego Morales','Camila Reyes','Martín Vargas','Isabella Ponce','Alejandro Ruiz','Paula Soto','Ricardo Díaz','Laura Mendoza','José Romero','Natalia Vega','Fernando Castillo','Andrea López','Sebastián Torres','Mónica Ramos','Gabriel Flores','Daniela Paredes','Andrés Gómez','Lucía Navarro'];
-const COUNTRIES=['MX','AR','CO','CL','PE','UY'];
-const INTENTS=['consulta de financiamiento','tasación de vehículo','estado de crédito','agendar visita','info modelos disponibles','documentos pendientes','refinanciamiento'];
-const UTM_SOURCES=['google','facebook','instagram','direct','email'];
-const UTM_CAMPAIGNS=['financiamiento_0pct','retargeting_tasacion','promo_mayo_autos','leads_0km','soporte_post_venta'];
-const LANDINGS=['/financiamiento','/promo-mayo-autos','/tasacion-online','/catalogo-0km'];
-const TMPL_NAMES=['Bienvenida_Nuevo_Lead','Seguimiento_Sin_Respuesta','Promo_Tasa_0_Mayo','Recordatorio_Visita_Concesionaria','Documentos_Pendientes'];
-const CAMP_NAMES=['Campaña Leads Financiamiento','Reactivación Sin Respuesta','Promo Tasa 0% Mayo','Seguimiento Tasación','Recordatorio Documentos'];
+// Fecha de referencia para reportes que aún usan datos sintéticos (Pauta, Contactos)
+const TODAY_DEMO = new Date();
 
-const TODAY_DEMO=new Date(2024,4,8); // May 8 2024 — "today" for demo
+// ── DATA LAYER (BigQuery via API) ──────────────────────────────
+// Fuente: atom_gold.gold_cases — atom-ai-hub
+// API: http://localhost:8000 (ver api/run.sh para levantar)
 
-// ── DATA GENERATION (report data) ─────────────────────────────
-function genRecord(isCurr){
-  const origen=pick(ORIGENES);
-  const dir=['campañas','plantillas individuales'].includes(origen)?'outbound':'inbound';
-  const dBack=isCurr?ri(0,29):ri(30,59);
-  const dBase=new Date(TODAY_DEMO);
-  dBase.setDate(TODAY_DEMO.getDate()-dBack);
-  const d=new Date(dBase.getFullYear(),dBase.getMonth(),dBase.getDate(),ri(8,20),ri(0,59),ri(0,59));
-  const escalado=seed()<.55;
-  const fechaAsig=escalado?new Date(d.getTime()+ri(1,15)*60000):null;
-  const firstResp=escalado?new Date(fechaAsig.getTime()+ri(30,600)*1000):null;
-  const respSecs=firstResp?Math.round((firstResp-fechaAsig)/1000):null;
-  const isSale=seed()<(CONV_RATES[origen]||.08);
-  return{origen,dir,fecha:d,bot:pick(BOTS),grupo:escalado?pick(GRUPOS):null,
-    escalado,respSecs,
-    isSale,botTipif:seed()<.8?pick(BOT_TIPIFS):null,
-    agentTipif:escalado&&seed()<.9?pick(AGENT_TIPIFS):null,
-    maxStage:'stage_'+ri(1,4)};
+let DATA = [];           // filas crudas de gold_cases para la empresa seleccionada
+let filtered = [];
+let prevFiltered = [];
+let currentPeriodDays = 15;  // default 15 días (gold_cases tiene ventana de 30d)
+let currentCompanyId = null;
+
+// ── Company dropdown ─────────────────────────────────────────────────────────
+let _companies = []; // [{company_id, company_name, case_count}]
+
+async function loadCompanies() {
+  try {
+    const res = await fetch('http://localhost:8000/companies');
+    if (!res.ok) throw new Error('API no disponible');
+    _companies = await res.json();
+    renderCompanyDD(_companies);
+  } catch(e) {
+    console.error('Error cargando empresas:', e);
+    document.getElementById('company-dd-label').textContent = '⚠ API no disponible — ejecutar api/run.sh';
+  }
 }
-const DATA=Array.from({length:200},()=>genRecord(true));
-const PREV=Array.from({length:160},()=>genRecord(false));
-let filtered=[...DATA];
-let prevFiltered=[...PREV];
-let currentPeriodDays=30;
+
+function renderCompanyDD(list) {
+  const container = document.getElementById('company-dd-list');
+  if (!list.length) {
+    container.innerHTML = '<div class="company-dd-empty">Sin resultados</div>';
+    return;
+  }
+  container.innerHTML = list.map(c => `
+    <div class="company-dd-item${currentCompanyId === c.company_id ? ' selected' : ''}"
+         onclick="selectCompany('${c.company_id.replace(/'/g,"\\'")}', '${c.company_name.replace(/'/g,"\\'")}')">
+      <span class="dd-item-name">${c.company_name}</span>
+      <span class="dd-item-count">${c.case_count.toLocaleString('es-AR')}</span>
+    </div>`).join('');
+}
+
+function toggleCompanyDD() {
+  document.getElementById('company-dd').classList.toggle('open');
+  if (document.getElementById('company-dd').classList.contains('open')) {
+    setTimeout(() => document.getElementById('company-dd-search').focus(), 50);
+  }
+}
+
+function filterCompanyDD(q) {
+  const lower = q.toLowerCase();
+  renderCompanyDD(q ? _companies.filter(c => c.company_name.toLowerCase().includes(lower)) : _companies);
+}
+
+function selectCompany(cid, cname) {
+  document.getElementById('company-dd-label').textContent = cname;
+  document.getElementById('company-dd').classList.remove('open');
+  document.getElementById('company-dd-search').value = '';
+  renderCompanyDD(_companies);
+  onCompanyChange(cid);
+}
+
+// Cerrar dropdown al hacer click afuera
+document.addEventListener('click', e => {
+  const dd = document.getElementById('company-dd');
+  if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+});
+
+// Llamado al seleccionar empresa
+async function onCompanyChange(cid) {
+  if (!cid) return;
+  currentCompanyId = cid;
+  const loader = document.getElementById('dd-loader');
+  if (loader) loader.classList.add('visible');
+  try {
+    const res = await fetch(`http://localhost:8000/cases/${encodeURIComponent(cid)}`);
+    if (!res.ok) throw new Error('Error al obtener casos');
+    DATA = await res.json();
+    DATA.forEach(d => { d.fecha = new Date(d.first_message_at); });
+    rebuildFilterOptions();
+    applyFilters();
+  } catch(e) {
+    console.error('Error cargando casos:', e);
+    document.getElementById('kpi-grid').innerHTML =
+      '<div class="company-loading">⚠ Error al cargar datos. Revisá que la API esté corriendo (bash api/run.sh).</div>';
+  } finally {
+    if (loader) loader.classList.remove('visible');
+  }
+}
+
+// Reconstruye las opciones de los filtros desplegables con valores reales de DATA
+function rebuildFilterOptions() {
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+  buildMSOptions('origen', uniq(DATA.map(d => d.origin_type)));
+  buildMSOptions('bot',    uniq(DATA.map(d => d.flow_name)));
+  buildMSOptions('grupo',  uniq(DATA.map(d => d.last_group_name)));
+  buildMSOptions('tipif',  uniq(DATA.map(d => d.last_typification)));
+}
+
+// Regenera el HTML interno de un ms-popover con opciones dinámicas
+function buildMSOptions(key, options) {
+  const popover = document.getElementById('ms-popover-' + key);
+  if (!popover) return;
+  const footer = popover.querySelector('.ms-footer-row');
+  const items = options.map(v =>
+    `<div class="ms-item"><label><input type="checkbox" value="${v}" onchange="updateMSLabel('${key}')"> ${v}</label></div>`
+  ).join('');
+  popover.innerHTML = items +
+    `<div class="ms-footer-row"><button class="ms-clear" onclick="clearMS('${key}')">Limpiar</button></div>`;
+}
+
+loadCompanies(); // ejecutar al cargar la página
 
 const MES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function getPeriodSlice(days){
-  const endDate=new Date(TODAY_DEMO);endDate.setHours(23,59,59,999);
-  const startDate=new Date(TODAY_DEMO);startDate.setDate(TODAY_DEMO.getDate()-days+1);startDate.setHours(0,0,0,0);
+  // Usa fecha real de hoy — gold_cases tiene ventana rolling de 30 días
+  const today=new Date();
+  const endDate=new Date(today);endDate.setHours(23,59,59,999);
+  const startDate=new Date(today);startDate.setDate(today.getDate()-days+1);startDate.setHours(0,0,0,0);
   const prevEnd=new Date(startDate);prevEnd.setDate(startDate.getDate()-1);prevEnd.setHours(23,59,59,999);
   const prevStart=new Date(prevEnd);prevStart.setDate(prevEnd.getDate()-days+1);prevStart.setHours(0,0,0,0);
-  const pool=[...DATA,...PREV];
-  const curr=pool.filter(d=>d.fecha>=startDate&&d.fecha<=endDate);
-  const prev=pool.filter(d=>d.fecha>=prevStart&&d.fecha<=prevEnd);
+  // DATA contiene los 30 días completos — curr y prev se cortan por fecha en JS
+  const curr=DATA.filter(d=>d.fecha>=startDate&&d.fecha<=endDate);
+  const prev=DATA.filter(d=>d.fecha>=prevStart&&d.fecha<=prevEnd);
   const fmtD=d=>MES_CORTO[d.getMonth()]+' '+d.getDate();
   return{curr,prev,label:fmtD(startDate)+' – '+fmtD(endDate),prevLabel:`últimos ${days} días`};
 }
@@ -1135,7 +1252,7 @@ function updatePeriodLabels(){
 }
 function updateReportMeta(){
   const el=document.getElementById('report-updated-time');
-  if(el)el.textContent='31/05/2024 · 08:00 hs';
+  if(el){const now=new Date();el.textContent=now.toLocaleDateString('es-AR')+' · '+now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' hs';}
 }
 
 // ── CONFIG ─────────────────────────────────────────────────────
@@ -1156,13 +1273,13 @@ let CONFIG={
 function isConversion(d,conv){
   const c=conv||CONFIG.conversions[0];
   if(!c) return false;
-  if(c.type==='cita') return d.agentTipif==='reagendar';
-  if(c.type==='typification') return c.values.includes(d.agentTipif);
-  return c.values.includes(d.maxStage);
+  if(c.type==='cita') return d.last_typification==='reagendar';
+  if(c.type==='typification') return c.values.includes(d.last_typification);
+  return c.values.includes(d.max_stage);
 }
 function withinSLA(d){
-  if(d.respSecs===null) return null;
-  return d.respSecs<=CONFIG.sla_target_min*60;
+  if(d.first_response_time_seconds==null) return null;
+  return d.first_response_time_seconds<=CONFIG.sla_target_min*60;
 }
 
 // ── DB TABLES (for Ver tablas) ─────────────────────────────────
@@ -1781,21 +1898,23 @@ function sendChat(){
 }
 function getChatAnswer(q){
   const totalConvs=DATA.length;
-  const ventas=DATA.filter(d=>d.isSale).length;
+  const ventas=DATA.filter(d=>d.is_sale).length;
   const convRate=totalConvs?Math.round(ventas/totalConvs*100):0;
-  const escaladas=DATA.filter(d=>d.escalado).length;
+  const escaladas=DATA.filter(d=>d.is_assigned).length;
   const asigPct=totalConvs?Math.round(escaladas/totalConvs*100):0;
   const noEscPct=100-asigPct;
-  const metaConvs=DB.meta_ads.reduce((a,r)=>a+r.conversaciones,0);
-  const metaSpend=DB.meta_ads.reduce((a,r)=>a+r.importe_gastado,0);
-  const metaVentas=DB.meta_ads.reduce((a,r)=>a+r.ventas,0);
-  const topCamp=[...new Set(DB.meta_ads.map(r=>r.campaign_name))].map(c=>({
+  const metaConvs=DB.meta_ads?DB.meta_ads.reduce((a,r)=>a+r.conversaciones,0):0;
+  const metaSpend=DB.meta_ads?DB.meta_ads.reduce((a,r)=>a+r.importe_gastado,0):0;
+  const metaVentas=DB.meta_ads?DB.meta_ads.reduce((a,r)=>a+r.ventas,0):0;
+  const topCamp=DB.meta_ads?[...new Set(DB.meta_ads.map(r=>r.campaign_name))].map(c=>({
     name:c,
     convs:DB.meta_ads.filter(r=>r.campaign_name===c).reduce((a,r)=>a+r.conversaciones,0),
     ventas:DB.meta_ads.filter(r=>r.campaign_name===c).reduce((a,r)=>a+r.ventas,0)
-  })).sort((a,b)=>(b.convs?b.ventas/b.convs:0)-(a.convs?a.ventas/a.convs:0))[0];
-  const topBot=BOTS.map(b=>({name:b,count:DATA.filter(d=>d.bot===b).length})).sort((a,b)=>b.count-a.count)[0];
-  const topGrupo=GRUPOS.map(g=>({name:g,ventas:DATA.filter(d=>d.grupo===g&&d.isSale).length})).sort((a,b)=>b.ventas-a.ventas)[0];
+  })).sort((a,b)=>(b.convs?b.ventas/b.convs:0)-(a.convs?a.ventas/a.convs:0))[0]:null;
+  const bots=[...new Set(DATA.map(d=>d.flow_name).filter(Boolean))];
+  const topBot=bots.map(b=>({name:b,count:DATA.filter(d=>d.flow_name===b).length})).sort((a,b)=>b.count-a.count)[0];
+  const grupos=[...new Set(DATA.map(d=>d.last_group_name).filter(Boolean))];
+  const topGrupo=grupos.map(g=>({name:g,ventas:DATA.filter(d=>d.last_group_name===g&&d.is_sale).length})).sort((a,b)=>b.ventas-a.ventas)[0];
   const slaOk=DATA.filter(d=>withinSLA(d)===true).length;
   const slaTot=DATA.filter(d=>withinSLA(d)!==null).length;
   const slaRate=slaTot?Math.round(slaOk/slaTot*100):0;
@@ -1821,26 +1940,25 @@ function getChatAnswer(q){
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
-const pct=(a,b)=>b===0?'—':Math.round(a/b*100)+'%';
-const avg=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):0;
-const fmtSecs=s=>!s?'—':s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s';
-const fmtUSD=v=>'$'+v.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0});
-const fmtUSD2=v=>'$'+v.toFixed(2);
-const COLORS=['#E8590C','#2E7D32','#1565C0','#6A1B9A','#E65100'];
-const BADGE_MAP={'inbound organico':'b-org','click to wa':'b-ctwa','campañas':'b-camp','webhooks':'b-hook','plantillas individuales':'b-tmpl'};
-const charts={};
-const dc=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+function pct(a,b){return b===0?'—':Math.round(a/b*100)+'%';}
+function avg(arr){return arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):0;}
+function fmtSecs(s){return !s?'—':s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s';}
+function fmtUSD(v){return '$'+v.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fmtUSD2(v){return '$'+v.toFixed(2);}
+var COLORS=['#E8590C','#2E7D32','#1565C0','#6A1B9A','#E65100'];
+var BADGE_MAP={'inbound organico':'b-org','click to wa':'b-ctwa','campañas':'b-camp','webhooks':'b-hook','plantillas individuales':'b-tmpl'};
+function dc(id){if(window.charts&&window.charts[id]){window.charts[id].destroy();delete window.charts[id];}}
 
 // ── REPORT RENDER ──────────────────────────────────────────────
 function applyFilters(){
   const {curr,prev}=getPeriodSlice(currentPeriodDays);
   const oV=getMS('origen'),bV=getMS('bot'),gV=getMS('grupo'),tV=getMS('tipif'),eV=getMS('etapa');
   const filt=d=>(
-    (!oV.length||oV.includes(d.origen))&&
-    (!bV.length||bV.includes(d.bot))&&
-    (!gV.length||gV.includes(d.grupo))&&
-    (!tV.length||tV.includes(d.agentTipif))&&
-    (!eV.length||eV.includes(d.maxStage))
+    (!oV.length||oV.includes(d.origin_type))&&
+    (!bV.length||bV.includes(d.flow_name))&&
+    (!gV.length||gV.includes(d.last_group_name))&&
+    (!tV.length||tV.includes(d.last_typification))&&
+    (!eV.length||eV.includes(d.max_stage))
   );
   filtered=curr.filter(filt);
   prevFiltered=prev.filter(filt);
@@ -1855,16 +1973,28 @@ function resetFilters(){
 }
 
 function renderKPIs(){
+  if(!currentCompanyId){
+    const ghost='<div class="kpi-ghost"><div class="kpi-ghost-bar w60"></div><div class="kpi-ghost-bar w40"></div></div>';
+    document.getElementById('kpi-grid').innerHTML=ghost.repeat(6)+
+      '<div style="grid-column:1/-1"><div class="no-company-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg><span>Seleccioná una empresa para ver datos reales</span></div></div>';
+    return;
+  }
   const f=filtered,p=prevFiltered,total=f.length,prevTotal=p.length;
-  const esc=f.filter(d=>d.escalado).length,prevEsc=p.filter(d=>d.escalado).length;
+  // KPI: Conversaciones — SQL: SELECT COUNT(*) FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end
+  // KPI: Escaladas a agente — SQL: SELECT COUNT(*) FROM gold_cases WHERE company_id=? AND is_assigned=TRUE AND DATE(first_message_at) BETWEEN @start AND @end
+  const esc=f.filter(d=>d.is_assigned).length,prevEsc=p.filter(d=>d.is_assigned).length;
+  // KPI: Ventas cerradas — SQL: SELECT COUNT(*) FROM gold_cases WHERE company_id=? AND is_sale=TRUE AND DATE(first_message_at) BETWEEN @start AND @end
   const ventas=f.filter(d=>isConversion(d)).length,prevVentas=p.filter(d=>isConversion(d)).length;
-  const escArr=f.filter(d=>d.escalado),prevEscArr=p.filter(d=>d.escalado);
+  const escArr=f.filter(d=>d.is_assigned),prevEscArr=p.filter(d=>d.is_assigned);
+  // KPI: Cumplimiento SLA — SQL: SELECT COUNTIF(first_response_time_seconds <= sla_target_sec) / COUNTIF(is_assigned) * 100 FROM gold_cases WHERE company_id=? AND is_assigned=TRUE AND DATE(first_message_at) BETWEEN @start AND @end
   const slaOk=escArr.filter(d=>withinSLA(d)===true).length;
   const prevSlaOk=prevEscArr.filter(d=>withinSLA(d)===true).length;
   const slaRate=escArr.length?Math.round(slaOk/escArr.length*100):0;
   const prevSlaRate=prevEscArr.length?Math.round(prevSlaOk/prevEscArr.length*100):0;
+  // KPI: Tasa de conversión — SQL: SELECT COUNTIF(is_sale) / COUNT(*) * 100 FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end
   const convRate=total?Math.round(ventas/total*100):0,prevConvRate=prevTotal?Math.round(prevVentas/prevTotal*100):0;
-  const avgResp=avg(f.filter(d=>d.respSecs).map(d=>d.respSecs));
+  // KPI: Resp. prom. agente — SQL: SELECT AVG(first_response_time_seconds) FROM gold_cases WHERE company_id=? AND is_assigned=TRUE AND DATE(first_message_at) BETWEEN @start AND @end
+  const avgResp=avg(f.filter(d=>d.is_assigned&&d.first_response_time_seconds).map(d=>d.first_response_time_seconds));
   const hasPrev=p.length>0;
   const periodLabel=currentPeriodDays===7?'últimos 7 días':currentPeriodDays===90?'últimos 90 días':'últimos 30 días';
   const kpis=[
@@ -1895,6 +2025,7 @@ function renderDaily(){
   const labels=dates.map(d=>MES[d.getMonth()]+' '+d.getDate());
   const isSameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
   const convData=dates.map(d=>filtered.filter(r=>isSameDay(r.fecha,d)).length);
+  // SQL: SELECT DATE(first_message_at), COUNT(*), COUNTIF(is_sale) FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1
   const ventaData=dates.map(d=>filtered.filter(r=>isSameDay(r.fecha,d)&&isConversion(r)).length);
 
   // Key point indices: global max, global min (non-zero), and evenly spaced intermediates
@@ -1910,7 +2041,7 @@ function renderDaily(){
   const pointRadii=convData.map((_,i)=>keySet.has(i)?3:0);
   const pointHoverRadii=convData.map((_,i)=>keySet.has(i)?5:3);
 
-  charts['daily']=new Chart(document.getElementById('chart-daily'),{
+  window.charts['daily']=new Chart(document.getElementById('chart-daily'),{
     data:{
       labels,
       datasets:[
@@ -1961,13 +2092,17 @@ function renderDaily(){
   });
 }
 function renderFunnel(){
+  // SQL equivalente del funnel completo:
+  // SELECT COUNT(*) total, COUNTIF(last_bot_typification IS NOT NULL) mql,
+  //        COUNTIF(is_assigned) sql_, COUNTIF(is_typified) atendido, COUNTIF(is_sale) venta
+  // FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end
   const tot=filtered.length||1;
   const stages=[
     {label:'Awareness',val:filtered.length},
     {label:'Lead',val:Math.round(filtered.length*.85)},
-    {label:'MQL',val:filtered.filter(d=>d.botTipif).length},
-    {label:'SQL',val:filtered.filter(d=>d.escalado).length},
-    {label:'Atendido',val:filtered.filter(d=>d.agentTipif).length},
+    {label:'MQL',val:filtered.filter(d=>d.last_bot_typification).length},
+    {label:'SQL',val:filtered.filter(d=>d.is_assigned).length},
+    {label:'Atendido',val:filtered.filter(d=>d.is_typified).length},
     {label:'Venta',val:filtered.filter(d=>isConversion(d)).length},
   ];
   const colors=['#E8590C','#EA6D25','#EC803E','#EE9358','#F0A672','#2E7D32'];
@@ -1990,27 +2125,33 @@ function renderFunnel(){
   }).join('');
 }
 function renderOrigen(){
-  dc('origen');const counts=ORIGENES.map(o=>filtered.filter(d=>d.origen===o).length);
-  document.getElementById('leg-origen').innerHTML=ORIGENES.map((o,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${COLORS[i]}"></span>${o.replace('inbound organico','inb. org.').replace('plantillas individuales','plantillas')} (${counts[i]})</div>`).join('');
-  charts['origen']=new Chart(document.getElementById('chart-origen'),{type:'doughnut',data:{labels:ORIGENES,datasets:[{data:counts,backgroundColor:COLORS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/filtered.length*100)}%)`}}},cutout:'62%'}});
+  // SQL: SELECT origin_type, COUNT(*) FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1 ORDER BY 2 DESC
+  dc('origen');
+  const origenes=[...new Set(filtered.map(d=>d.origin_type).filter(Boolean))].sort();
+  const counts=origenes.map(o=>filtered.filter(d=>d.origin_type===o).length);
+  document.getElementById('leg-origen').innerHTML=origenes.map((o,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${COLORS[i%COLORS.length]}"></span>${o} (${counts[i]})</div>`).join('');
+  window.charts['origen']=new Chart(document.getElementById('chart-origen'),{type:'doughnut',data:{labels:origenes,datasets:[{data:counts,backgroundColor:COLORS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/(filtered.length||1)*100)}%)`}}},cutout:'62%'}});
 }
 function renderSLA(){
+  // SQL: SELECT COUNTIF(first_response_time_seconds <= sla_target_sec) ok, COUNTIF(first_response_time_seconds > sla_target_sec) fail FROM gold_cases WHERE company_id=? AND is_assigned=TRUE AND DATE(first_message_at) BETWEEN @start AND @end
   dc('sla');
   const target=CONFIG.sla_target_min;
   document.getElementById('sla-subtitle').textContent=`Objetivo < ${target} min · agentes humanos`;
-  const esc=filtered.filter(d=>d.escalado);
+  const esc=filtered.filter(d=>d.is_assigned);
   const ok=esc.filter(d=>withinSLA(d)===true).length;
   const fail=esc.filter(d=>withinSLA(d)===false).length;
   const tot=ok+fail;
-  charts['sla']=new Chart(document.getElementById('chart-sla'),{type:'doughnut',data:{labels:[`≤ ${target} min`,`> ${target} min`],datasets:[{data:[ok,fail],backgroundColor:['#2E7D32','#E57373'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/(tot||1)*100)}%)`}}},cutout:'60%'}});
+  window.charts['sla']=new Chart(document.getElementById('chart-sla'),{type:'doughnut',data:{labels:[`≤ ${target} min`,`> ${target} min`],datasets:[{data:[ok,fail],backgroundColor:['#2E7D32','#E57373'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/(tot||1)*100)}%)`}}},cutout:'60%'}});
   document.getElementById('leg-sla').innerHTML=`<div class="leg-item"><span class="leg-dot" style="background:#2E7D32"></span>OK: ${ok} (${Math.round(ok/(tot||1)*100)}%)</div><div class="leg-item"><span class="leg-dot" style="background:#E57373"></span>Fallo: ${fail}</div>`;
 }
 function renderTipif(){
+  // SQL: SELECT last_typification, COUNT(*) FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end AND last_typification IS NOT NULL GROUP BY 1 ORDER BY 2 DESC
   dc('tipif');
   const TIPIF_COLORS=['rgba(232,89,12,0.55)','rgba(46,125,50,0.55)','rgba(21,101,192,0.55)','rgba(106,27,154,0.55)','rgba(230,81,0,0.55)'];
-  const sorted=AGENT_TIPIFS.map(t=>({t,v:filtered.filter(d=>d.agentTipif===t).length})).sort((a,b)=>b.v-a.v);
+  const tipifValues=[...new Set(filtered.map(d=>d.last_typification).filter(Boolean))];
+  const sorted=tipifValues.map(t=>({t,v:filtered.filter(d=>d.last_typification===t).length})).sort((a,b)=>b.v-a.v);
   const total=filtered.length||1;
-  charts['tipif']=new Chart(document.getElementById('chart-tipif'),{
+  window.charts['tipif']=new Chart(document.getElementById('chart-tipif'),{
     type:'bar',
     data:{
       labels:sorted.map(c=>c.t),
@@ -2059,48 +2200,59 @@ function renderTipif(){
   });
 }
 function renderConvOrigen(){
+  // SQL: SELECT origin_type, COUNTIF(is_sale)/COUNT(*)*100 conv_rate FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1 ORDER BY 2 DESC
   dc('conv-origen');
   const _pc=CONFIG.conversions[0]||{type:'typification',values:[]};
   const label=_pc.type==='cita'?'Cita agendada':_pc.type==='typification'?`Tipif: ${_pc.values.join(', ')}`:`Etapa: ${_pc.values.join(', ')}`;
   document.getElementById('conv-subtitle').textContent=`Tasa de conversión por origen · ${label}`;
-  charts['conv-origen']=new Chart(document.getElementById('chart-conv-origen'),{type:'bar',data:{labels:ORIGENES.map(o=>o.replace('inbound organico','inb. org.').replace('plantillas individuales','plantillas')),datasets:[{data:ORIGENES.map(o=>{const r=filtered.filter(d=>d.origen===o);return r.length?Math.round(r.filter(d=>isConversion(d)).length/r.length*100):0;}),backgroundColor:COLORS,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'% conversión'}}},scales:{x:{ticks:{font:{size:10},maxRotation:15},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:11},callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  const origenes=[...new Set(filtered.map(d=>d.origin_type).filter(Boolean))].sort();
+  window.charts['conv-origen']=new Chart(document.getElementById('chart-conv-origen'),{type:'bar',data:{labels:origenes,datasets:[{data:origenes.map(o=>{const r=filtered.filter(d=>d.origin_type===o);return r.length?Math.round(r.filter(d=>isConversion(d)).length/r.length*100):0;}),backgroundColor:COLORS,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'% conversión'}}},scales:{x:{ticks:{font:{size:10},maxRotation:15},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:11},callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.04)'}}}}});
 }
 function renderTableOrigen(){
+  // SQL: SELECT origin_type, flow_direction, COUNT(*) total, COUNTIF(is_assigned) esc, COUNTIF(first_response_time_seconds<=sla_target_sec) sla_ok, COUNTIF(is_sale) ventas FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1,2 ORDER BY 3 DESC
   const grand=filtered.length||1;
-  document.getElementById('tbody-origen').innerHTML=ORIGENES.map(o=>{
-    const rows=filtered.filter(d=>d.origen===o),total=rows.length;
-    const esc=rows.filter(d=>d.escalado).length;
+  const origenes=[...new Set(filtered.map(d=>d.origin_type).filter(Boolean))].sort();
+  document.getElementById('tbody-origen').innerHTML=origenes.map(o=>{
+    const rows=filtered.filter(d=>d.origin_type===o),total=rows.length;
+    const esc=rows.filter(d=>d.is_assigned).length;
     const slaOk=rows.filter(d=>withinSLA(d)===true).length;
     const ventas=rows.filter(d=>isConversion(d)).length;
-    const dir=['campañas','plantillas individuales'].includes(o)?'outbound':'inbound';
+    const dir=rows[0]?.flow_direction||'—';
     const slaRate=esc?Math.round(slaOk/esc*100):null;
-    return`<tr><td><span class="badge ${BADGE_MAP[o]||''}">${o}</span></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td><span class="badge ${dir==='outbound'?'b-camp':'b-org'}">${dir}</span></td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="${slaRate!==null?(slaRate>=70?'ok':'fail'):''}">${slaRate!==null?slaRate+'%':'—'}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
+    return`<tr><td><span class="badge ${BADGE_MAP[o]||''}">${o}</span></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td><span class="badge ${dir==='Outbound'?'b-camp':'b-org'}">${dir}</span></td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="${slaRate!==null?(slaRate>=70?'ok':'fail'):''}">${slaRate!==null?slaRate+'%':'—'}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
   }).join('');
 }
 function renderTableBot(){
+  // SQL: SELECT flow_name, COUNT(*) total, AVG(CAST(REGEXP_EXTRACT(max_stage,'[0-9]+') AS INT64)) avg_stage, COUNTIF(is_assigned) esc, COUNTIF(is_sale) ventas FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1 ORDER BY 2 DESC
   const grand=filtered.length||1;
-  document.getElementById('tbody-bot').innerHTML=BOTS.map(b=>{
-    const rows=filtered.filter(d=>d.bot===b),total=rows.length;
-    const avgStage=avg(rows.map(d=>parseInt(d.maxStage.replace('stage_',''))||1));
-    const tipifCounts={};rows.forEach(d=>{if(d.botTipif)tipifCounts[d.botTipif]=(tipifCounts[d.botTipif]||0)+1;});
+  const bots=[...new Set(filtered.map(d=>d.flow_name).filter(Boolean))].sort();
+  document.getElementById('tbody-bot').innerHTML=bots.map(b=>{
+    const rows=filtered.filter(d=>d.flow_name===b),total=rows.length;
+    const avgStage=avg(rows.map(d=>parseInt((d.max_stage||'stage_1').replace('stage_',''))||1));
+    const tipifCounts={};rows.forEach(d=>{if(d.last_bot_typification)tipifCounts[d.last_bot_typification]=(tipifCounts[d.last_bot_typification]||0)+1;});
     const top=Object.entries(tipifCounts).sort((a,b)=>b[1]-a[1])[0];
-    const esc=rows.filter(d=>d.escalado).length,ventas=rows.filter(d=>isConversion(d)).length;
+    const esc=rows.filter(d=>d.is_assigned).length,ventas=rows.filter(d=>isConversion(d)).length;
     return`<tr><td><strong>${b}</strong></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td class="mono">stage_${avgStage}</td><td>${top?`<span class="badge b-org">${top[0]}</span> <span style="color:var(--gray-500);font-size:10px">(${top[1]})</span>`:'—'}</td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
   }).join('');
 }
 function renderTableGrupo(){
+  // SQL: SELECT last_group_name, COUNT(*) total, COUNTIF(first_response_time_seconds<=sla_target_sec) sla_ok, AVG(first_response_time_seconds) avg_resp, COUNTIF(is_sale) ventas FROM gold_cases WHERE company_id=? AND is_assigned=TRUE AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1 ORDER BY 2 DESC
   const grand=filtered.length||1;
-  document.getElementById('tbody-grupo').innerHTML=GRUPOS.map(g=>{
-    const rows=filtered.filter(d=>d.grupo===g),total=rows.length;
+  const grupos=[...new Set(filtered.map(d=>d.last_group_name).filter(Boolean))].sort();
+  document.getElementById('tbody-grupo').innerHTML=grupos.map(g=>{
+    const rows=filtered.filter(d=>d.last_group_name===g),total=rows.length;
     const slaOk=rows.filter(d=>withinSLA(d)===true).length,ventas=rows.filter(d=>isConversion(d)).length;
     const slaRate=total?Math.round(slaOk/total*100):null;
-    const avgResp=avg(rows.filter(d=>d.respSecs).map(d=>d.respSecs));
-    const tipifCounts={};rows.forEach(d=>{if(d.agentTipif)tipifCounts[d.agentTipif]=(tipifCounts[d.agentTipif]||0)+1;});
+    const avgResp=avg(rows.filter(d=>d.first_response_time_seconds).map(d=>d.first_response_time_seconds));
+    const tipifCounts={};rows.forEach(d=>{if(d.last_typification)tipifCounts[d.last_typification]=(tipifCounts[d.last_typification]||0)+1;});
     const top=Object.entries(tipifCounts).sort((a,b)=>b[1]-a[1])[0];
     return`<tr><td><strong>${g}</strong></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td class="mono">${slaOk}</td><td class="${slaRate!==null?(slaRate>=70?'ok':'fail'):''}">${slaRate!==null?slaRate+'%':'—'}</td><td class="mono">${fmtSecs(avgResp)}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td><td>${top?`<span class="badge b-ctwa">${top[0]}</span>`:'—'}</td></tr>`;
   }).join('');
 }
-function render(){renderKPIs();renderDaily();renderFunnel();renderTipif();renderTableOrigen();renderTableBot();renderTableGrupo();}
+function render(){
+  [renderKPIs,renderDaily,renderFunnel,renderTipif,renderTableOrigen,renderTableBot,renderTableGrupo]
+    .forEach(fn=>{try{fn();}catch(e){console.warn(fn.name+' error:',e.message);}});
+}
 
 // ── PAUTA ──────────────────────────────────────────────────────
 const PAUTA_DATA={
@@ -2130,10 +2282,10 @@ function renderPauta(){
   dc('pauta-conv');dc('pauta-cpc');dc('pauta-ventas');dc('pauta-cpv');
   const canalNames=['Meta','Google','Web'];
   const canalColors=['#1565C0','#2E7D32','#E8590C'];
-  charts['pauta-conv']=new Chart(document.getElementById('chart-pauta-conv'),{type:'line',data:{labels:DAYS31.map(String),datasets:canales.map((c,i)=>({label:canalNames[i],data:PAUTA_DATA[c].hist,borderColor:canalColors[i],backgroundColor:'transparent',tension:.4,pointRadius:2,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:16},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
-  charts['pauta-cpc']=new Chart(document.getElementById('chart-pauta-cpc'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>parseFloat(d[c].cpc.toFixed(2))),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtUSD2(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(0,0,0,0.04)'}}}}});
-  charts['pauta-ventas']=new Chart(document.getElementById('chart-pauta-ventas'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>d[c].ventas),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
-  charts['pauta-cpv']=new Chart(document.getElementById('chart-pauta-cpv'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>parseFloat(d[c].cpv.toFixed(2))),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtUSD2(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  window.charts['pauta-conv']=new Chart(document.getElementById('chart-pauta-conv'),{type:'line',data:{labels:DAYS31.map(String),datasets:canales.map((c,i)=>({label:canalNames[i],data:PAUTA_DATA[c].hist,borderColor:canalColors[i],backgroundColor:'transparent',tension:.4,pointRadius:2,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:16},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  window.charts['pauta-cpc']=new Chart(document.getElementById('chart-pauta-cpc'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>parseFloat(d[c].cpc.toFixed(2))),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtUSD2(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  window.charts['pauta-ventas']=new Chart(document.getElementById('chart-pauta-ventas'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>d[c].ventas),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+  window.charts['pauta-cpv']=new Chart(document.getElementById('chart-pauta-cpv'),{type:'bar',data:{labels:canalNames,datasets:[{data:canales.map(c=>parseFloat(d[c].cpv.toFixed(2))),backgroundColor:canalColors,borderWidth:0,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtUSD2(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(0,0,0,0.04)'}}}}});
 }
 
 // ── CLICK TO WA META ──────────────────────────────────────────
@@ -2222,7 +2374,7 @@ function renderMetaCtwa(){
     return Math.max(0,Math.round(base+Math.sin(i*1.7+0.5)*0.35*base));
   });
   dc('meta-daily');
-  charts['meta-daily']=new Chart(document.getElementById('chart-meta-daily'),{
+  window.charts['meta-daily']=new Chart(document.getElementById('chart-meta-daily'),{
     data:{
       labels:dayLabels,
       datasets:[
@@ -2250,7 +2402,7 @@ function renderMetaCtwa(){
   ];
   const fTot=fSteps[0].val||1;
   dc('meta-funnel');
-  charts['meta-funnel']=new Chart(document.getElementById('chart-meta-funnel'),{
+  window.charts['meta-funnel']=new Chart(document.getElementById('chart-meta-funnel'),{
     type:'bar',
     data:{
       labels:fSteps.map(s=>`${s.label}  ${s.val.toLocaleString()} (${Math.round(s.val/fTot*100)}%)`),
@@ -2619,7 +2771,7 @@ function renderCDaily(curr){
   const isSameDay=(a,b)=>{const db=new Date(b);return a.getFullYear()===db.getFullYear()&&a.getMonth()===db.getMonth()&&a.getDate()===db.getDate();};
   const newByDay=dates.map(d=>curr.filter(c=>c.isNew&&c.date&&isSameDay(d,c.date)).length);
   const retByDay=dates.map(d=>curr.filter(c=>!c.isNew&&c.date&&isSameDay(d,c.date)).length);
-  charts['c-daily']=new Chart(document.getElementById('chart-c-daily'),{
+  window.charts['c-daily']=new Chart(document.getElementById('chart-c-daily'),{
     type:'bar',
     data:{labels,datasets:[
       {label:'Nuevos',data:newByDay,backgroundColor:'rgba(232,89,12,0.7)',borderRadius:3,borderWidth:0,order:2},
@@ -2657,7 +2809,7 @@ function renderCPais(curr){
   const countries=[...new Set(DB.contacts.map(c=>c.country))];
   const counts=countries.map(co=>curr.filter(c=>c.country===co).length);
   document.getElementById('leg-c-pais').innerHTML=countries.map((co,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${CCOLS[i%CCOLS.length]}"></span>${co} (${counts[i]})</div>`).join('');
-  charts['c-pais']=new Chart(document.getElementById('chart-c-pais'),{
+  window.charts['c-pais']=new Chart(document.getElementById('chart-c-pais'),{
     type:'doughnut',data:{labels:countries,datasets:[{data:counts,backgroundColor:CCOLS,borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}}},cutout:'62%'}
   });
@@ -2668,7 +2820,7 @@ function renderCOrigen(curr){
   const origs=[...new Set(curr.map(c=>c.latestOrigin))].filter(Boolean);
   const counts=origs.map(o=>curr.filter(c=>c.latestOrigin===o).length);
   document.getElementById('leg-c-origen').innerHTML=origs.map((o,i)=>`<div class="leg-item"><span class="leg-dot" style="background:${CCOLS[i%CCOLS.length]}"></span>${o} (${counts[i]})</div>`).join('');
-  charts['c-origen']=new Chart(document.getElementById('chart-c-origen'),{
+  window.charts['c-origen']=new Chart(document.getElementById('chart-c-origen'),{
     type:'doughnut',data:{labels:origs,datasets:[{data:counts,backgroundColor:CCOLS,borderWidth:2,borderColor:'#fff'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}`}}},cutout:'62%'}
   });
@@ -2682,7 +2834,7 @@ function renderCFields(curr){
     const filled=new Set(DB.contact_custom_fields.filter(f=>f.field_name===fn&&contactIds.has(f.contact_id)).map(f=>f.contact_id)).size;
     return{name:fn.replace(/_/g,' '),rate:curr.length?Math.round(filled/curr.length*100):0};
   }).sort((a,b)=>b.rate-a.rate);
-  charts['c-fields']=new Chart(document.getElementById('chart-c-fields'),{
+  window.charts['c-fields']=new Chart(document.getElementById('chart-c-fields'),{
     type:'bar',
     data:{labels:pairs.map(p=>p.name),datasets:[{data:pairs.map(p=>p.rate),backgroundColor:pairs.map(p=>p.rate>=60?'#2E7D32':p.rate>=30?'#E8590C':'#D1D0CC'),borderWidth:0,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
@@ -2783,7 +2935,9 @@ function resetContactFilters(){
 // ── INIT ───────────────────────────────────────────────────────
 updateReportMeta();
 updatePeriodLabels();
-render();
+try { render(); } catch(e) { console.warn('render init error:', e.message); }
+// Garantizar que los KPI skeletons aparezcan aunque render() falle parcialmente
+if (!document.getElementById('kpi-grid').innerHTML.trim()) { try { renderKPIs(); } catch(_) {} }
 </script>
 </body>
 </html>
