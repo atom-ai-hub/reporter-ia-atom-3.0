@@ -2018,10 +2018,17 @@ function renderKPIs(){
 }
 function renderDaily(){
   dc('daily');
+  const canvas=document.getElementById('chart-daily');
+  if(!filtered.length){
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+    canvas.parentElement.innerHTML='<canvas id="chart-daily"></canvas><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:13px">Sin datos para el período</div>';
+    return;
+  }
   const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const nDays=Math.min(currentPeriodDays,45);
   const dates=[];
-  for(let i=nDays-1;i>=0;i--){const d=new Date(TODAY_DEMO);d.setDate(TODAY_DEMO.getDate()-i);dates.push(d);}
+  const _today=new Date();
+  for(let i=nDays-1;i>=0;i--){const d=new Date(_today);d.setDate(_today.getDate()-i);dates.push(d);}
   const labels=dates.map(d=>MES[d.getMonth()]+' '+d.getDate());
   const isSameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
   const convData=dates.map(d=>filtered.filter(r=>isSameDay(r.fecha,d)).length);
@@ -2096,14 +2103,25 @@ function renderFunnel(){
   // SELECT COUNT(*) total, COUNTIF(last_bot_typification IS NOT NULL) mql,
   //        COUNTIF(is_assigned) sql_, COUNTIF(is_typified) atendido, COUNTIF(is_sale) venta
   // FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end
+  if(!filtered.length){
+    document.getElementById('funnel-html').innerHTML='<div style="text-align:center;padding:32px 0;color:var(--gray-400);font-size:13px">Sin datos para el período</div>';
+    return;
+  }
   const tot=filtered.length||1;
+  // Funnel con datos reales:
+  // Awareness   → todos los casos (COUNT(*))
+  // Ingresó a flujo → tiene flow_name asignado (flow_name IS NOT NULL)
+  // MQL         → bot tipificó con una categoría (last_bot_typification IS NOT NULL)
+  // SQL         → escalado a agente humano (is_assigned = TRUE)
+  // Atendido    → agente tipificó (is_typified = TRUE)
+  // Conversión  → según CONFIG (is_sale o last_typification)
   const stages=[
     {label:'Awareness',val:filtered.length},
-    {label:'Lead',val:Math.round(filtered.length*.85)},
+    {label:'Ingresó a flujo',val:filtered.filter(d=>!!d.flow_name).length},
     {label:'MQL',val:filtered.filter(d=>d.last_bot_typification).length},
     {label:'SQL',val:filtered.filter(d=>d.is_assigned).length},
     {label:'Atendido',val:filtered.filter(d=>d.is_typified).length},
-    {label:'Venta',val:filtered.filter(d=>isConversion(d)).length},
+    {label:'Conversión',val:filtered.filter(d=>isConversion(d)).length},
   ];
   const colors=['#E8590C','#EA6D25','#EC803E','#EE9358','#F0A672','#2E7D32'];
   const max=stages[0].val||1;
@@ -2145,11 +2163,20 @@ function renderSLA(){
   document.getElementById('leg-sla').innerHTML=`<div class="leg-item"><span class="leg-dot" style="background:#2E7D32"></span>OK: ${ok} (${Math.round(ok/(tot||1)*100)}%)</div><div class="leg-item"><span class="leg-dot" style="background:#E57373"></span>Fallo: ${fail}</div>`;
 }
 function renderTipif(){
-  // SQL: SELECT last_typification, COUNT(*) FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end AND last_typification IS NOT NULL GROUP BY 1 ORDER BY 2 DESC
+  // SQL: SELECT last_typification, COUNT(*) FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end AND last_typification IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 12
   dc('tipif');
-  const TIPIF_COLORS=['rgba(232,89,12,0.55)','rgba(46,125,50,0.55)','rgba(21,101,192,0.55)','rgba(106,27,154,0.55)','rgba(230,81,0,0.55)'];
+  const tipifContainer=document.getElementById('chart-tipif').parentElement;
+  const TIPIF_COLORS=['rgba(232,89,12,0.72)','rgba(46,125,50,0.72)','rgba(21,101,192,0.72)','rgba(106,27,154,0.72)','rgba(230,81,0,0.72)','rgba(0,131,143,0.72)','rgba(198,40,40,0.72)','rgba(49,27,146,0.72)'];
   const tipifValues=[...new Set(filtered.map(d=>d.last_typification).filter(Boolean))];
-  const sorted=tipifValues.map(t=>({t,v:filtered.filter(d=>d.last_typification===t).length})).sort((a,b)=>b.v-a.v);
+  if(!tipifValues.length){
+    tipifContainer.innerHTML='<canvas id="chart-tipif"></canvas><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:13px">Sin tipificaciones en el período</div>';
+    return;
+  }
+  const allSorted=tipifValues.map(t=>({t,v:filtered.filter(d=>d.last_typification===t).length})).sort((a,b)=>b.v-a.v);
+  const sorted=allSorted.slice(0,12); // top 12
+  const nRows=sorted.length;
+  // Altura dinámica: 32px por fila, mínimo 180px
+  tipifContainer.style.height=Math.max(180, nRows*34+20)+'px';
   const total=filtered.length||1;
   window.charts['tipif']=new Chart(document.getElementById('chart-tipif'),{
     type:'bar',
@@ -2210,6 +2237,8 @@ function renderConvOrigen(){
 }
 function renderTableOrigen(){
   // SQL: SELECT origin_type, flow_direction, COUNT(*) total, COUNTIF(is_assigned) esc, COUNTIF(first_response_time_seconds<=sla_target_sec) sla_ok, COUNTIF(is_sale) ventas FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1,2 ORDER BY 3 DESC
+  const tbody=document.getElementById('tbody-origen');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--gray-400)">Sin datos</td></tr>';return;}
   const grand=filtered.length||1;
   const origenes=[...new Set(filtered.map(d=>d.origin_type).filter(Boolean))].sort();
   document.getElementById('tbody-origen').innerHTML=origenes.map(o=>{
@@ -2224,19 +2253,26 @@ function renderTableOrigen(){
 }
 function renderTableBot(){
   // SQL: SELECT flow_name, COUNT(*) total, AVG(CAST(REGEXP_EXTRACT(max_stage,'[0-9]+') AS INT64)) avg_stage, COUNTIF(is_assigned) esc, COUNTIF(is_sale) ventas FROM gold_cases WHERE company_id=? AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1 ORDER BY 2 DESC
+  const tbody=document.getElementById('tbody-bot');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--gray-400)">Sin datos</td></tr>';return;}
   const grand=filtered.length||1;
   const bots=[...new Set(filtered.map(d=>d.flow_name).filter(Boolean))].sort();
   document.getElementById('tbody-bot').innerHTML=bots.map(b=>{
     const rows=filtered.filter(d=>d.flow_name===b),total=rows.length;
-    const avgStage=avg(rows.map(d=>parseInt((d.max_stage||'stage_1').replace('stage_',''))||1));
+    // max_stage: puede ser 'stage_1', 'stage_2'... o texto libre — normalizamos
+    const stageNums=rows.map(d=>{if(!d.max_stage)return 0;const m=d.max_stage.match(/(\d+)$/);return m?parseInt(m[1]):0;}).filter(v=>v>0);
+    const avgStageNum=stageNums.length?Math.round(avg(stageNums)):0;
+    const avgStageLabel=avgStageNum>0?(CONFIG.stages[avgStageNum-1]?.name||'etapa '+avgStageNum):'—';
     const tipifCounts={};rows.forEach(d=>{if(d.last_bot_typification)tipifCounts[d.last_bot_typification]=(tipifCounts[d.last_bot_typification]||0)+1;});
     const top=Object.entries(tipifCounts).sort((a,b)=>b[1]-a[1])[0];
     const esc=rows.filter(d=>d.is_assigned).length,ventas=rows.filter(d=>isConversion(d)).length;
-    return`<tr><td><strong>${b}</strong></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td class="mono">stage_${avgStage}</td><td>${top?`<span class="badge b-org">${top[0]}</span> <span style="color:var(--gray-500);font-size:10px">(${top[1]})</span>`:'—'}</td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
+    return`<tr><td><strong>${b}</strong></td><td class="mono">${total}</td><td class="mono" style="color:var(--gray-500)">${pct(total,grand)}</td><td class="mono" style="font-size:11px">${avgStageLabel}</td><td>${top?`<span class="badge b-org">${top[0]}</span> <span style="color:var(--gray-500);font-size:10px">(${top[1]})</span>`:'—'}</td><td class="mono">${esc}</td><td class="mono">${pct(esc,total)}</td><td class="mono">${ventas}</td><td class="${ventas>0?'ok':''} mono">${pct(ventas,total)}</td></tr>`;
   }).join('');
 }
 function renderTableGrupo(){
   // SQL: SELECT last_group_name, COUNT(*) total, COUNTIF(first_response_time_seconds<=sla_target_sec) sla_ok, AVG(first_response_time_seconds) avg_resp, COUNTIF(is_sale) ventas FROM gold_cases WHERE company_id=? AND is_assigned=TRUE AND DATE(first_message_at) BETWEEN @start AND @end GROUP BY 1 ORDER BY 2 DESC
+  const tbody=document.getElementById('tbody-grupo');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--gray-400)">Sin datos</td></tr>';return;}
   const grand=filtered.length||1;
   const grupos=[...new Set(filtered.map(d=>d.last_group_name).filter(Boolean))].sort();
   document.getElementById('tbody-grupo').innerHTML=grupos.map(g=>{
